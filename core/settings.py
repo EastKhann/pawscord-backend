@@ -14,7 +14,7 @@ from pathlib import Path
 # --- 1. ALLOWED_HOSTS Kontrolü ---
 # Güvenlik açısından tavsiye edilmez ama geliştirme için en hızlı çözümdür.
 # Django'ya tüm gelen isteklere yanıt vermesini söyler.
-ALLOWED_HOSTS = ['*', 'pseudostudiously-reflexional-clara.ngrok-free.dev']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','*', 'pseudostudiously-reflexional-clara.ngrok-free.dev']
 
 # --- 2. CORS Ayarları (Gerekirse) ---
 # WebSocket için bu zorunlu değildir, ancak React'in diğer HTTP işlemleri için önemlidir.
@@ -23,7 +23,12 @@ CORS_ALLOW_ALL_ORIGINS = True # <-- En basit çözüm
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+CORS_ALLOWED_ORIGINS = [
+    "https://pawscord-frontend.vercel.app",'pseudostudiously-reflexional-clara.ngrok-free.dev',
+    # Geliştirme için localhost'u da listede tutalım
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -33,18 +38,18 @@ SECRET_KEY = 'django-insecure-a_n55upuxdrj-jqri-r0do+o2as=y3um_=364u0-2-9bs25&@v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*',"pseudostudiously-reflexional-clara.ngrok-free.dev"] # <-- Bu da çözülmüş olmalıydı, tekrar kontrol edin!
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','*',"pseudostudiously-reflexional-clara.ngrok-free.dev"] # <-- Bu da çözülmüş olmalıydı, tekrar kontrol edin!
 # =========================================================
 # NGROK/HTTPS/GÜVENLİK AYARLARI (GEREKLİDİR)
 # =========================================================
 
 # 1. ALLOWED_HOSTS (Bu zaten yapılmış olmalı, kontrol edin!)
-ALLOWED_HOSTS = ['*', 'pseudostudiously-reflexional-clara.ngrok-free.dev']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','*', 'pseudostudiously-reflexional-clara.ngrok-free.dev']
 
 
 # 2. CSRF GÜVENLİK İZNİ
 # Ngrok üzerinden gelen HTTPS bağlantıları için alan adını güvenilir say
-CSRF_TRUSTED_ORIGINS = ['https://pseudostudiously-reflexional-clara.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = ['https://pawscord-frontend.vercel.app','https://pseudostudiously-reflexional-clara.ngrok-free.dev']
 
 # 3. NGROK HTTPS DÜZELTMESİ
 # Django'ya, Ngrok'tan gelen HTTPS başlıklarını kabul etmesini söyler.
@@ -53,7 +58,9 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Geliştirme kolaylığı için Django'nun bu hatalarda takılmasını engeller:
 CORS_ALLOW_ALL_ORIGINS = True # (Corsheaders kuruluysa)
 # Application definition
-
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

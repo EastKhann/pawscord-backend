@@ -3,13 +3,20 @@ import RoomList from './RoomList';
 import ChatUserList from './ChatUserList';
 
 // --- DİNAMİK URL YAPILANDIRMASI ---
-const NGROK_HOST = 'pseudostudiously-reflexional-clara.ngrok-free.dev'; // Kendi NGROK adresinizi buraya yazın
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_HOST = isLocal ? 'localhost:8000' : NGROK_HOST;
-const API_PROTOCOL = isLocal ? 'http' : 'https';
-const WS_PROTOCOL = isLocal ? 'ws' : 'wss';
+// --- ESKİ HALİ ---
+// --- YENİ HALİ ---
+// Canlı ortamda Vercel'in bize vereceği adresi kullanır,
+// kendi bilgisayarımızda çalıştırırken ise 'localhost:8000' kullanır.
+const API_HOST = process.env.REACT_APP_API_HOST || 'localhost:8000';
 
+// Sitenin 'https:' (güvenli) protokolüyle mi yoksa 'http:' ile mi açıldığını kontrol eder.
+const isSecure = window.location.protocol === 'https:';
+const API_PROTOCOL = isSecure ? 'https' : 'http';
+const WS_PROTOCOL = isSecure ? 'wss' : 'ws';
+
+// URL'leri bu dinamik değişkenlerle oluştur
 const MESSAGE_HISTORY_URL = `${API_PROTOCOL}://${API_HOST}/api/messages/history/`;
+// ... dosyanın geri kalanı aynı ...
 const ROOM_OPTIONS = ['genel', 'teknoloji', 'oyun', 'spor', 'dehsetpurna'];
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 
