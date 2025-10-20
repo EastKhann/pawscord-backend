@@ -25,10 +25,11 @@ CORS_ALLOW_ALL_ORIGINS = True # <-- En basit çözüm
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CORS_ALLOWED_ORIGINS = [
-    "https://pawscord-frontend.vercel.app",'pseudostudiously-reflexional-clara.ngrok-free.dev',
-    # Geliştirme için localhost'u da listede tutalım
+    "https://pawscord-frontend.vercel.app",  # DÜZELTME: Başına https:// ekledik.
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    'pseudostudiously-reflexional-clara.ngrok-free.dev',
+
 ]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -50,7 +51,8 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost','*', 'pseudostudiously-reflexional-cla
 
 # 2. CSRF GÜVENLİK İZNİ
 # Ngrok üzerinden gelen HTTPS bağlantıları için alan adını güvenilir say
-CSRF_TRUSTED_ORIGINS = ['https://pawscord-frontend.vercel.app','https://pseudostudiously-reflexional-clara.ngrok-free.dev']
+CSRF_TRUSTED_ORIGINS = ['https://pawscord-frontend.vercel.app',
+'https://pseudostudiously-reflexional-clara.ngrok-free.dev',]
 
 # 3. NGROK HTTPS DÜZELTMESİ
 # Django'ya, Ngrok'tan gelen HTTPS başlıklarını kabul etmesini söyler.
