@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os  # BU SATIRI EKLE
+import dj_database_url # Bu satır zaten olmalı
 from pathlib import Path
 # --- 1. ALLOWED_HOSTS Kontrolü ---
 # Güvenlik açısından tavsiye edilmez ama geliştirme için en hızlı çözümdür.
