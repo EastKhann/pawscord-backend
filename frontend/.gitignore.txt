@@ -1,0 +1,17 @@
+# Bağımlılıklar (Bunlar sunucuda 'npm install' ile tekrar yüklenecek)
+node_modules/
+
+# Üretim build dosyaları (Bunlar sunucuda 'npm run build' ile oluşturulacak)
+build/
+
+# Loglar
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ortam değişkenleri
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
