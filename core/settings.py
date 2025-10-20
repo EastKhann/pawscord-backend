@@ -25,7 +25,7 @@ CORS_ALLOW_ALL_ORIGINS = True # <-- En basit çözüm
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CORS_ALLOWED_ORIGINS = [
-    "https://pawscord-frontend.vercel.app",'pseudostudiously-reflexional-clara.ngrok-free.dev',
+    ""https://pawscord-frontend.vercel.app",",'pseudostudiously-reflexional-clara.ngrok-free.dev',
     # Geliştirme için localhost'u da listede tutalım
     "http://localhost:3000",
     "http://127.0.0.1:3000",
