@@ -1,0 +1,3058 @@
+
+######################################################################
+PROJE KAYNAK KODU DÖKÜMÜ - DİZİN: C:\Users\Eastkhan\Software\JavaScript\PAWSCORD_CHAT
+######################################################################
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\ASGI.PY] BAŞLANGIÇ
+============================================================
+001: # core/asgi.py (TAM HALİ)
+002:  
+003: import os
+004: import django
+005: from django.core.asgi import get_asgi_application
+006:  
+007: os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings') 
+008: django.setup()
+009:  
+010: from channels.routing import ProtocolTypeRouter, URLRouter
+011: from channels.auth import AuthMiddlewareStack 
+012: from chat.routing import websocket_urlpatterns 
+013:  
+014: django_asgi_app = get_asgi_application()
+015:  
+016: application = ProtocolTypeRouter({
+017:         "http": django_asgi_app, 
+018:         "websocket": AuthMiddlewareStack( 
+019:             URLRouter(
+020:                 websocket_urlpatterns 
+021:             )
+022:         ),
+023: })
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\ASGI.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\SETTINGS.PY] BAŞLANGIÇ
+============================================================
+001: # core/settings.py (WHITENOISE İÇİN NİHAİ VE KESİN ÇÖZÜM)
+002: 
+003: from pathlib import Path
+004: import os
+005: 
+006: BASE_DIR = Path(__file__).resolve().parent.parent
+007: SECRET_KEY = 'django-insecure-a_n55upuxdrj-jqri-r0do+o2as=y3um_=364u0-2-9bs25&@v'
+008: DEBUG = True
+009: 
+010: ALLOWED_HOSTS = ['*', 'pseudostudiously-reflexional-clara.ngrok-free.dev']
+011: 
+012: CORS_ALLOWED_ORIGINS = [
+013:     "http://localhost:3000",
+014:     "http://127.0.0.1:3000",
+015: ]
+016: 
+017: CSRF_TRUSTED_ORIGINS = [
+018:     'https://pseudostudiously-reflexional-clara.ngrok-free.dev',
+019:     'http://localhost:3000',
+020: ]
+021: SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+022: 
+023: INSTALLED_APPS = [
+024:     'django.contrib.admin',
+025:     'django.contrib.auth',
+026:     'django.contrib.contenttypes',
+027:     'django.contrib.sessions',
+028:     'django.contrib.messages',
+029:     'whitenoise.runserver_nostatic',
+030:     'django.contrib.staticfiles',
+031:     
+032:     'chat.apps.ChatConfig',
+033:     'channels',
+034:     'corsheaders',
+035:     'rest_framework',
+036: ]
+037: 
+038: MIDDLEWARE = [
+039:     'corsheaders.middleware.CorsMiddleware',
+040:     'django.middleware.security.SecurityMiddleware',
+041:     'whitenoise.middleware.WhiteNoiseMiddleware',
+042:     'django.contrib.sessions.middleware.SessionMiddleware',
+043:     'django.middleware.common.CommonMiddleware',
+044:     'django.middleware.csrf.CsrfViewMiddleware',
+045:     'django.contrib.auth.middleware.AuthenticationMiddleware',
+046:     'django.contrib.messages.middleware.MessageMiddleware',
+047:     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+048: ]
+049: 
+050: ROOT_URLCONF = 'core.urls'
+051: TEMPLATES = [
+052:     {
+053:         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+054:         'DIRS': [os.path.join(BASE_DIR, 'frontend/build')], 
+055:         'APP_DIRS': True,
+056:         'OPTIONS': {
+057:             'context_processors': [
+058:                 'django.template.context_processors.debug', 
+059:                 'django.template.context_processors.request',
+060:                 'django.contrib.auth.context_processors.auth',
+061:                 'django.contrib.messages.context_processors.messages',
+062:             ],
+063:         },
+064:     },
+065: ]
+066: 
+067: WSGI_APPLICATION = 'core.wsgi.application'
+068: ASGI_APPLICATION = 'core.asgi.application'
+069: 
+070: DATABASES = {
+071:     'default': {
+072:         'ENGINE': 'django.db.backends.sqlite3',
+073:         'NAME': BASE_DIR / 'db.sqlite3',
+074:     }
+075: }
+076: 
+077: CHANNEL_LAYERS = {
+078:     'default': {
+079:         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+080:         'CONFIG': {
+081:             "hosts": [('127.0.0.1', 6379)],
+082:         },
+083:     },
+084: }
+085: 
+086: LANGUAGE_CODE = 'en-us'
+087: TIME_ZONE = 'UTC'
+088: USE_I18N = True
+089: USE_TZ = True
+090: 
+091: STATIC_URL = '/static/' 
+092: STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
+093: 
+094: STATICFILES_DIRS = [
+095:     os.path.join(BASE_DIR, 'frontend/build/static'),
+096: ]
+097: 
+098: STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+099: 
+100: WHITENOISE_ROOT = os.path.join(BASE_DIR, 'frontend', 'build')
+101: 
+102: MEDIA_URL = '/media/'
+103: MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+104: 
+105: DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\SETTINGS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\URLS.PY] BAŞLANGIÇ
+============================================================
+001: # core/urls.py (TÜM DOSYA YOLLARI İÇİN NİHAİ DÜZELTME)
+002: 
+003: from django.contrib import admin
+004: from django.urls import path, include, re_path
+005: from django.views.generic import TemplateView
+006: from django.conf import settings
+007: from django.conf.urls.static import static
+008: from django.views.static import serve
+009: 
+010: urlpatterns = [
+011:     # Django Admin Paneli
+012:     path('admin/', admin.site.urls),
+013: 
+014:     # API yolları
+015:     path('api/', include('chat.urls')), 
+016: ] 
+017: 
+018: # DEBUG modunda medya dosyalarının (/media/) sunulmasını sağlar.
+019: if settings.DEBUG:
+020:     urlpatterns += [
+021:         re_path(r'^media/(?P<path>.*)$', serve, {
+022:             'document_root': settings.MEDIA_ROOT,
+023:         }),
+024:     ]
+025: 
+026: # Statik dosyalar Whitenoise tarafından yönetilir, bu satır geliştirme sunucusu için kalabilir.
+027: urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+028: 
+029: # KRİTİK: React uygulamasını ve public klasöründeki dosyaları sunma
+030: # Bu bloğun her zaman en sonda olduğundan emin ol!
+031: urlpatterns += [
+032:     # Ana sayfa isteğini doğrudan index.html'e yönlendir
+033:     re_path(r'^$', TemplateView.as_view(template_name='index.html')),
+034:     
+035:     # API, MEDYA, STATİK veya AVATARS ile başlamayan TÜM diğer istekleri index.html'e yönlendir.
+036:     re_path(r'^(?!api/|media/|static/|avatars/|sounds/).*$', TemplateView.as_view(template_name='index.html')),
+037: ]
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\URLS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\WSGI.PY] BAŞLANGIÇ
+============================================================
+001: """
+002: WSGI config for core project.
+003: 
+004: It exposes the WSGI callable as a module-level variable named ``application``.
+005: 
+006: For more information on this file, see
+007: https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
+008: """
+009: 
+010: import os
+011: 
+012: from django.core.wsgi import get_wsgi_application
+013: 
+014: os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+015: 
+016: application = get_wsgi_application()
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CORE\WSGI.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\CONSUMERS.PY] BAŞLANGIÇ
+============================================================
+001: # chat/consumers.py (TÜM DÜZELTMELER YAPILMIŞ NİHAİ HALİ)
+002: 
+003: import json
+004: from urllib.parse import unquote_plus
+005: # <<< YENİ: Standart datetime kütüphanesinden timezone import edildi >>>
+006: from datetime import timezone as dt_timezone
+007: from channels.generic.websocket import WebsocketConsumer
+008: from asgiref.sync import async_to_sync
+009: from django.utils import timezone
+010: from django.db import transaction
+011: from channels.layers import get_channel_layer 
+012: 
+013: from .models import Room, Message, UserProfile, Conversation, Reaction, UserChatStatus
+014: from .serializers import MessageSerializer
+015: 
+016: ACTIVE_VOICE_USERS = {}
+017: ACTIVE_CHAT_USERS = {}
+018: ACTIVE_GLOBAL_USERS = {}
+019: TYPING_USERS = {}
+020: GLOBAL_STATUS_GROUP = 'global_voice_status'
+021: GLOBAL_USER_GROUP = 'global_user_status'  
+022: 
+023: 
+024: def get_unread_counts_for_user(username):
+025:     """Belirtilen kullanıcı için okunmamış oda ve DM mesaj sayılarını hesaplar."""
+026:     try:
+027:         user = UserProfile.objects.get(username=username)
+028:     except UserProfile.DoesNotExist:
+029:         return {}
+030: 
+031:     unread_counts = {}
+032:     
+033:     rooms = Room.objects.all()
+034:     for room in rooms:
+035:         try:
+036:             status = UserChatStatus.objects.get(user=user, room=room)
+037:             last_read = status.last_read_timestamp
+038:         except UserChatStatus.DoesNotExist:
+039:             # <<< DEĞİŞİKLİK: Hatalı olan timezone.utc, dt_timezone.utc ile düzeltildi >>>
+040:             last_read = timezone.datetime.min.replace(tzinfo=dt_timezone.utc)
+041:         
+042:         count = Message.objects.filter(
+043:             room=room, 
+044:             timestamp__gt=last_read
+045:         ).exclude(username=username).count()
+046:         
+047:         if count > 0:
+048:             unread_counts[f'room-{room.slug}'] = count
+049: 
+050:     conversations = user.conversations.all()
+051:     for conv in conversations:
+052:         try:
+053:             status = UserChatStatus.objects.get(user=user, conversation=conv)
+054:             last_read = status.last_read_timestamp
+055:         except UserChatStatus.DoesNotExist:
+056:             # <<< DEĞİŞİKLİK: Hatalı olan timezone.utc, dt_timezone.utc ile düzeltildi >>>
+057:             last_read = timezone.datetime.min.replace(tzinfo=dt_timezone.utc)
+058:             
+059:         count = Message.objects.filter(
+060:             conversation=conv, 
+061:             timestamp__gt=last_read
+062:         ).exclude(username=username).count()
+063:         
+064:         if count > 0:
+065:             unread_counts[f'dm-{conv.id}'] = count
+066:             
+067:     return unread_counts
+068: 
+069: 
+070: @transaction.atomic
+071: def create_message_and_get_data(target_model_instance, username, content=None, image_file=None, reply_to_id=None):
+072:     params = { 'username': username, 'content': content if content else None, 'image': image_file if image_file else None }
+073:     if isinstance(target_model_instance, Room): params['room'] = target_model_instance
+074:     elif isinstance(target_model_instance, Conversation): params['conversation'] = target_model_instance
+075:     else: raise TypeError("Hedef Room veya Conversation olmalı")
+076: 
+077:     if reply_to_id:
+078:         try:
+079:             params['reply_to'] = Message.objects.get(id=reply_to_id)
+080:         except Message.DoesNotExist:
+081:             pass
+082: 
+083:     msg_instance = Message.objects.create(**params)
+084:     print(f"[DB KAYIT BAŞARILI] Hedef: '{target_model_instance}', Kullanıcı: '{username}'")
+085:     return MessageSerializer(msg_instance).data
+086: 
+087: def create_room_sync(slug, channel_type):
+088:     if not slug or slug == 'genel': return None
+089:     try: return Room.objects.create(name=slug, slug=slug, channel_type=channel_type)
+090:     except Exception: return None
+091: 
+092: def delete_room_sync(slug):
+093:     if slug == 'genel': return 0
+094:     deleted_count, _ = Room.objects.filter(slug=slug).delete()
+095:     return deleted_count
+096: 
+097: def get_all_room_data_sync():
+098:     all_rooms = list(Room.objects.values('slug', 'channel_type').order_by('slug'))
+099:     general_room = next((r for r in all_rooms if r['slug'] == 'genel'), None)
+100:     other_rooms = [r for r in all_rooms if r['slug'] != 'genel']
+101:     if general_room: return [general_room] + other_rooms
+102:     return other_rooms
+103: 
+104: def update_user_profile_sync(username):
+105:     try:
+106:         user_profile, created = UserProfile.objects.get_or_create(username=username)
+107:         user_profile.last_seen = timezone.now()
+108:         user_profile.save()
+109:         return user_profile
+110:     except Exception as e:
+111:         print(f"[HATA] Kullanıcı profili güncellenemedi: {username}, Hata: {e}")
+112:         return None
+113: 
+114: def update_global_user_status(username, action):
+115:     old_count = ACTIVE_GLOBAL_USERS.get(username, 0)
+116:     
+117:     if action == 'connect':
+118:         ACTIVE_GLOBAL_USERS[username] = old_count + 1
+119:         is_online_changed = old_count == 0 and ACTIVE_GLOBAL_USERS[username] == 1
+120:     elif action == 'disconnect':
+121:         if old_count > 0:
+122:             ACTIVE_GLOBAL_USERS[username] = old_count - 1
+123:         is_online_changed = old_count > 0 and ACTIVE_GLOBAL_USERS[username] <= 0
+124:         if ACTIVE_GLOBAL_USERS[username] <= 0:
+125:             if username in ACTIVE_GLOBAL_USERS:
+126:                 del ACTIVE_GLOBAL_USERS[username]
+127:     else:
+128:         return
+129:         
+130:     if is_online_changed:
+131:         online_users = list(ACTIVE_GLOBAL_USERS.keys())
+132:         async_to_sync(get_channel_layer().group_send)(
+133:             GLOBAL_USER_GROUP,
+134:             {'type': 'online_user_list_update', 'users': online_users}
+135:         )
+136: 
+137: class ChatConsumer(WebsocketConsumer):
+138:     def get_room(self, room_slug):
+139:         try: return Room.objects.get(slug=room_slug)
+140:         except Room.DoesNotExist: return None
+141:         
+142:     def connect(self):
+143:         self.room_name = self.scope['url_route']['kwargs']['room_name']
+144:         self.room_group_name = f'chat_{self.room_name}'
+145:         query_params = dict(p.split('=') for p in self.scope['query_string'].decode().split('&') if '=' in p)
+146:         self.username = unquote_plus(query_params.get('username', 'Misafir'))
+147:         if not self.get_room(self.room_name): self.close(); return
+148:         
+149:         async_to_sync(self.channel_layer.group_add)(self.room_group_name, self.channel_name)
+150:         self.accept()
+151:         
+152:         if self.room_name not in ACTIVE_CHAT_USERS: ACTIVE_CHAT_USERS[self.room_name] = set()
+153:         ACTIVE_CHAT_USERS[self.room_name].add(self.username)
+154:         
+155:         async_to_sync(self.channel_layer.group_send)(
+156:             self.room_group_name,
+157:             {'type': 'system_message_handler', 'message': f'{self.username} kanala katıldı.'}
+158:         )
+159: 
+160:         self.broadcast_chat_user_list()
+161:         update_global_user_status(self.username, 'connect')
+162:         async_to_sync(self.channel_layer.group_add)(GLOBAL_USER_GROUP, self.channel_name)
+163:         
+164:         self.send(text_data=json.dumps({ 'type': 'online_user_list_update', 'online_users': list(ACTIVE_GLOBAL_USERS.keys()) }))
+165:         update_user_profile_sync(self.username)
+166: 
+167:     def disconnect(self, close_code):
+168:         if self.room_name in ACTIVE_CHAT_USERS and self.username in ACTIVE_CHAT_USERS[self.room_name]:
+169:             ACTIVE_CHAT_USERS[self.room_name].discard(self.username)
+170:             async_to_sync(self.channel_layer.group_send)(
+171:                 self.room_group_name,
+172:                 {'type': 'system_message_handler', 'message': f'{self.username} kanaldan ayrıldı.'}
+173:             )
+174:             self.broadcast_chat_user_list()
+175: 
+176:         update_global_user_status(self.username, 'disconnect')
+177:         async_to_sync(self.channel_layer.group_discard)(GLOBAL_USER_GROUP, self.channel_name)
+178:         async_to_sync(self.channel_layer.group_discard)(self.room_group_name, self.channel_name)
+179: 
+180:     def receive(self, text_data):
+181:         data = json.loads(text_data)
+182:         message_type = data.get('type')
+183:         
+184:         if message_type == 'edit_message':
+185:             try:
+186:                 message = Message.objects.select_related('reply_to').prefetch_related('reactions').get(id=data.get('message_id'))
+187:                 if message.username == self.username:
+188:                     message.content = data.get('new_content')
+189:                     message.is_edited = True
+190:                     message.save()
+191:                     message_data = MessageSerializer(message).data
+192:                     async_to_sync(self.channel_layer.group_send)(
+193:                         self.room_group_name,
+194:                         {'type': 'message_updated_handler', 'message': message_data}
+195:                     )
+196:             except Message.DoesNotExist: pass
+197: 
+198:         elif message_type == 'delete_message':
+199:             try:
+200:                 message = Message.objects.get(id=data.get('message_id'))
+201:                 if message.username == self.username:
+202:                     message_id = message.id
+203:                     message.delete()
+204:                     async_to_sync(self.channel_layer.group_send)(
+205:                         self.room_group_name,
+206:                         {'type': 'message_deleted_handler', 'message_id': message_id}
+207:                     )
+208:             except Message.DoesNotExist: pass
+209:         
+210:         elif message_type == 'toggle_reaction':
+211:             try:
+212:                 message = Message.objects.select_related('reply_to').prefetch_related('reactions').get(id=data.get('message_id'))
+213:                 emoji = data.get('emoji')
+214:                 reaction, created = Reaction.objects.get_or_create(message=message, username=self.username, emoji=emoji)
+215:                 if not created:
+216:                     reaction.delete()
+217:                 
+218:                 message.refresh_from_db() 
+219:                 message_data = MessageSerializer(message).data
+220:                 async_to_sync(self.channel_layer.group_send)(
+221:                     self.room_group_name,
+222:                     {'type': 'message_updated_handler', 'message': message_data}
+223:                 )
+224:             except Message.DoesNotExist: pass
+225: 
+226:         elif message_type == 'chat_message':
+227:             room_obj = self.get_room(self.room_name)
+228:             if room_obj:
+229:                 try:
+230:                     message_data = create_message_and_get_data(
+231:                         room_obj, 
+232:                         data.get('username'), 
+233:                         content=data.get('message'),
+234:                         reply_to_id=data.get('reply_to')
+235:                     )
+236:                     if data.get('temp_id'): message_data['temp_id'] = data.get('temp_id') 
+237: 
+238:                     async_to_sync(self.channel_layer.group_send)(self.room_group_name, {'type': 'chat_message_handler', **message_data})
+239:                     async_to_sync(self.channel_layer.group_send)(GLOBAL_STATUS_GROUP, {'type': 'global_message_notification', **message_data, 'room_slug': self.room_name})
+240:                 except Exception as e:
+241:                     print(f"[HATA] Oda mesajı kaydedilirken hata: {e}")
+242:             
+243:         elif message_type == 'typing_start':
+244:             async_to_sync(self.channel_layer.group_send)(self.room_group_name, {'type': 'typing_status_handler', 'username': self.username, 'is_typing': True})
+245:         elif message_type == 'typing_stop':
+246:             async_to_sync(self.channel_layer.group_send)(self.room_group_name, {'type': 'typing_status_handler', 'username': self.username, 'is_typing': False})
+247: 
+248:     def system_message_handler(self, event):
+249:         self.send(text_data=json.dumps({'type': 'system_message', 'message': event['message']}))
+250: 
+251:     def message_updated_handler(self, event):
+252:         self.send(text_data=json.dumps({'type': 'message_updated', 'message': event['message']}))
+253: 
+254:     def message_deleted_handler(self, event):
+255:         self.send(text_data=json.dumps({'type': 'message_deleted', 'message_id': event['message_id']}))
+256: 
+257:     def typing_status_handler(self, event):
+258:         self.send(text_data=json.dumps({ 'type': 'typing_status_update', 'username': event['username'], 'is_typing': event['is_typing'] }))
+259: 
+260:     def chat_message_handler(self, event):
+261:         payload = {k: v for k, v in event.items() if k != 'type'}
+262:         self.send(text_data=json.dumps({ 'type': 'chat', **payload }))
+263: 
+264:     def broadcast_chat_user_list(self):
+265:         async_to_sync(self.channel_layer.group_send)(self.room_group_name, {'type': 'chat_user_list_update', 'users': list(ACTIVE_CHAT_USERS.get(self.room_name, []))})
+266:         
+267:     def chat_user_list_update(self, event):
+268:         self.send(text_data=json.dumps({'type': 'chat_user_list_update', 'users': event['users']}))
+269:         
+270:     def room_deleted_notification(self, event): self.close()
+271: 
+272:     def online_user_list_update(self, event):
+273:         self.send(text_data=json.dumps({'type': 'online_user_list_update', 'online_users': event['users']}))
+274: 
+275: class DMConsumer(WebsocketConsumer):
+276:     def get_conversation(self, conversation_id):
+277:         try: return Conversation.objects.prefetch_related('participants').get(id=conversation_id)
+278:         except Conversation.DoesNotExist: return None
+279: 
+280:     def connect(self):
+281:         self.conversation_id = self.scope['url_route']['kwargs']['conversation_id']
+282:         self.conversation_group_name = f'dm_{self.conversation_id}'
+283:         query_params = dict(p.split('=') for p in self.scope['query_string'].decode().split('&') if '=' in p)
+284:         self.username = unquote_plus(query_params.get('username', None))
+285:         if not self.username: self.close(); return
+286:         self.conversation = self.get_conversation(self.conversation_id)
+287:         if not self.conversation or not self.conversation.participants.filter(username=self.username).exists(): self.close(); return
+288:         
+289:         async_to_sync(self.channel_layer.group_add)(self.conversation_group_name, self.channel_name)
+290:         self.accept()
+291:         
+292:         update_global_user_status(self.username, 'connect')
+293:         async_to_sync(self.channel_layer.group_add)(GLOBAL_USER_GROUP, self.channel_name)
+294:         self.send(text_data=json.dumps({ 'type': 'online_user_list_update', 'online_users': list(ACTIVE_GLOBAL_USERS.keys()) }))
+295:         update_user_profile_sync(self.username)
+296: 
+297:     def disconnect(self, close_code):
+298:         async_to_sync(self.channel_layer.group_discard)(self.conversation_group_name, self.channel_name)
+299:         update_global_user_status(self.username, 'disconnect')
+300:         async_to_sync(self.channel_layer.group_discard)(GLOBAL_USER_GROUP, self.channel_name)
+301: 
+302:     def receive(self, text_data):
+303:         data = json.loads(text_data)
+304:         message_type = data.get('type')
+305:         
+306:         if message_type == 'typing_start':
+307:             async_to_sync(self.channel_layer.group_send)(self.conversation_group_name, {'type': 'dm_typing_status_handler', 'username': self.username, 'is_typing': True, 'sender_channel_name': self.channel_name})
+308:         elif message_type == 'typing_stop':
+309:             async_to_sync(self.channel_layer.group_send)(self.conversation_group_name, {'type': 'dm_typing_status_handler', 'username': self.username, 'is_typing': False, 'sender_channel_name': self.channel_name})
+310:         
+311:         elif message_type == 'dm_message':
+312:             if self.conversation:
+313:                 try:
+314:                     message_data = create_message_and_get_data(
+315:                         self.conversation,
+316:                         data.get('username'),
+317:                         content=data.get('message'),
+318:                         reply_to_id=data.get('reply_to')
+319:                     )
+320:                     if data.get('temp_id'): message_data['temp_id'] = data.get('temp_id')
+321:                     
+322:                     async_to_sync(self.channel_layer.group_send)(self.conversation_group_name, {'type': 'dm_message_handler', **message_data})
+323:                     async_to_sync(self.channel_layer.group_send)(GLOBAL_STATUS_GROUP, {'type': 'global_message_notification', **message_data, 'conversation_id': self.conversation_id})
+324:                 except Exception as e:
+325:                     print(f"[HATA] DM mesajı hatası: {e}")
+326: 
+327:     def dm_typing_status_handler(self, event):
+328:         if self.channel_name != event.get('sender_channel_name'):
+329:             self.send(text_data=json.dumps({
+330:                 'type': 'typing_status_update',
+331:                 'username': event['username'],
+332:                 'is_typing': event['is_typing']
+333:             }))
+334: 
+335:     def dm_message_handler(self, event):
+336:         payload = {k: v for k, v in event.items() if k != 'type'}
+337:         self.send(text_data=json.dumps({ 'type': 'dm', **payload }))
+338: 
+339:     def online_user_list_update(self, event):
+340:         self.send(text_data=json.dumps({'type': 'online_user_list_update', 'online_users': event['users']}))
+341: 
+342: class VoiceConsumer(WebsocketConsumer):
+343:     def connect(self):
+344:         self.room_name = self.scope['url_route']['kwargs']['room_name']
+345:         self.room_group_name = f'voice_{self.room_name}'
+346:         query_params = {key: value for key, value in (param.split('=', 1) for param in self.scope['query_string'].decode().split('&') if '=' in param)}
+347:         self.username = unquote_plus(query_params.get('username', 'Misafir'))
+348:         async_to_sync(self.channel_layer.group_add)(self.room_group_name, self.channel_name)
+349:         if self.room_name not in ACTIVE_VOICE_USERS: ACTIVE_VOICE_USERS[self.room_name] = set()
+350:         ACTIVE_VOICE_USERS[self.room_name].add(self.username)
+351:         self.send_global_voice_status()
+352:         self.accept()
+353: 
+354:     def disconnect(self, close_code):
+355:         if self.username in ACTIVE_VOICE_USERS.get(self.room_name, set()):
+356:             ACTIVE_VOICE_USERS[self.room_name].discard(self.username)
+357:             if not ACTIVE_VOICE_USERS[self.room_name]: del ACTIVE_VOICE_USERS[self.room_name]
+358:         self.send_global_voice_status()
+359:         async_to_sync(self.channel_layer.group_discard)(self.room_group_name, self.channel_name)
+360:         
+361:     def send_global_voice_status(self):
+362:         async_to_sync(self.channel_layer.group_send)(GLOBAL_STATUS_GROUP, {'type': 'voice_state_update_handler', 'rooms': {room_name: list(users) for room_name, users in ACTIVE_VOICE_USERS.items()}})
+363: 
+364:     def receive(self, text_data):
+365:         async_to_sync(self.channel_layer.group_send)(self.room_group_name, {'type': 'voice_signal_handler', 'signal_data': json.loads(text_data), 'sender_channel_name': self.channel_name})
+366:     
+367:     def voice_signal_handler(self, event):
+368:         if event['sender_channel_name'] != self.channel_name: self.send(text_data=json.dumps(event['signal_data']))
+369:         
+370:     def room_deleted_notification(self, event): self.close()
+371: 
+372: class GlobalStatusConsumer(WebsocketConsumer):
+373:     def connect(self):
+374:         self.group_name = GLOBAL_STATUS_GROUP
+375:         
+376:         query_params = dict(p.split('=') for p in self.scope['query_string'].decode().split('&') if '=' in p)
+377:         self.username = unquote_plus(query_params.get('username', None))
+378: 
+379:         async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name) 
+380:         async_to_sync(self.channel_layer.group_add)(GLOBAL_USER_GROUP, self.channel_name) 
+381:         self.accept()
+382: 
+383:         if self.username:
+384:             self.send_initial_status(self.username)
+385: 
+386:     def disconnect(self, close_code): 
+387:         async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
+388:         async_to_sync(self.channel_layer.group_discard)(GLOBAL_USER_GROUP, self.channel_name)
+389: 
+390:     def voice_state_update_handler(self, event):
+391:         self.send(text_data=json.dumps({'type': 'voice_state_update', 'initial_load': True, 'rooms': event['rooms']}))
+392:         
+393:     def online_user_list_update(self, event):
+394:         self.send(text_data=json.dumps({'type': 'online_user_list_update', 'online_users': event['users']}))
+395:     
+396:     def user_profile_update_handler(self, event):
+397:         self.send(text_data=json.dumps({
+398:             'type': 'user_profile_update',
+399:             'user_data': event['user_data']
+400:         }))
+401: 
+402:     def global_message_notification(self, event):
+403:         payload = {k: v for k, v in event.items() if k != 'type'}
+404:         self.send(text_data=json.dumps({ 'type': 'global_message_notification', **payload }))
+405: 
+406:     def receive(self, text_data):
+407:         data = json.loads(text_data)
+408:         if data.get('type') == 'add_room':
+409:             if create_room_sync(data.get('room_slug'), data.get('channel_type')): self.broadcast_room_list_update()
+410:         elif data.get('type') == 'remove_room':
+411:             if delete_room_sync(data.get('room_slug')) > 0:
+412:                 self.broadcast_room_list_update()
+413:                 async_to_sync(self.channel_layer.group_send)(f'chat_{data.get("room_slug")}', {'type': 'room_deleted_notification'})
+414:                 async_to_sync(self.channel_layer.group_send)(f'voice_{data.get("room_slug")}', {'type': 'room_deleted_notification'})
+415: 
+416:     def broadcast_room_list_update(self):
+417:         room_data = get_all_room_data_sync()
+418:         async_to_sync(self.channel_layer.group_send)(self.group_name, {'type': 'room_list_update', 'rooms': room_data})
+419: 
+420:     def room_list_update(self, event):
+421:         self.send(text_data=json.dumps({'type': 'room_list_update', 'rooms': event['rooms']}))
+422: 
+423:     def send_initial_status(self, username):
+424:         room_data = get_all_room_data_sync()
+425:         self.send(text_data=json.dumps({'type': 'room_list_update', 'rooms': room_data}))
+426:         
+427:         initial_voice_status = {'type': 'voice_state_update', 'initial_load': True, 'rooms': {room: list(users) for room, users in ACTIVE_VOICE_USERS.items()}}
+428:         self.send(text_data=json.dumps(initial_voice_status))
+429:         
+430:         initial_online_status = {'type': 'online_user_list_update', 'online_users': list(ACTIVE_GLOBAL_USERS.keys())}
+431:         self.send(text_data=json.dumps(initial_online_status))
+432:         
+433:         unread_data = get_unread_counts_for_user(username)
+434:         self.send(text_data=json.dumps({'type': 'unread_counts_update', 'counts': unread_data}))
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\CONSUMERS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\MODELS.PY] BAŞLANGIÇ
+============================================================
+001: # chat/models.py (REAKSİYON, YANITLAMA VE OKUNDU BİLGİSİ EKLENDİ)
+002: 
+003: from django.db import models
+004: from django.utils import timezone
+005: 
+006: class UserProfile(models.Model):
+007:     ip_address = models.CharField(max_length=45, unique=True, null=True, blank=True)
+008:     username = models.CharField(max_length=255, unique=True)
+009:     last_seen = models.DateTimeField(auto_now=True)
+010:     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+011:     status_message = models.CharField(max_length=100, blank=True, default="")
+012: 
+013:     def __str__(self):
+014:         return self.username
+015: 
+016: class Room(models.Model):
+017:     name = models.CharField(max_length=255, unique=True)
+018:     slug = models.SlugField(max_length=255, unique=True)
+019:     timestamp = models.DateTimeField(auto_now_add=True)
+020:     CHANNEL_TYPE_CHOICES = [('text', 'Metin'), ('voice', 'Sesli')]
+021:     channel_type = models.CharField(max_length=5, choices=CHANNEL_TYPE_CHOICES, default='text')
+022: 
+023:     def __str__(self):
+024:         return self.slug
+025: 
+026: class Conversation(models.Model):
+027:     participants = models.ManyToManyField(UserProfile, related_name='conversations')
+028:     created_at = models.DateTimeField(auto_now_add=True)
+029: 
+030:     def __str__(self):
+031:         usernames = " & ".join([user.username for user in self.participants.all()])
+032:         return f"Konuşma: {usernames}"
+033: 
+034: class Message(models.Model):
+035:     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
+036:     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
+037:     username = models.CharField(max_length=255)
+038:     content = models.TextField(null=True, blank=True)
+039:     image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
+040:     timestamp = models.DateTimeField(default=timezone.now)
+041:     is_edited = models.BooleanField(default=False)
+042:     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies')
+043: 
+044:     class Meta:
+045:         ordering = ['timestamp']
+046: 
+047:     def __str__(self):
+048:         target = self.room.slug if self.room else f"DM ({self.conversation_id})"
+049:         has_image = " [Resim]" if self.image else ""
+050:         reply_info = f" (yanıt: {self.reply_to.id})" if self.reply_to else ""
+051:         return f"{self.username} -> {target}{reply_info}: {self.content or ''}{has_image}"
+052: 
+053: class Reaction(models.Model):
+054:     message = models.ForeignKey(Message, on_delete=models.CASCADE, related_name='reactions')
+055:     username = models.CharField(max_length=255)
+056:     emoji = models.CharField(max_length=50)
+057: 
+058:     class Meta:
+059:         unique_together = ('message', 'username', 'emoji')
+060: 
+061:     def __str__(self):
+062:         return f"'{self.username}' -> '{self.message.id}' için '{self.emoji}' tepkisi"
+063: 
+064: class UserChatStatus(models.Model):
+065:     user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)
+066:     room = models.ForeignKey(Room, on_delete=models.CASCADE, null=True, blank=True)
+067:     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, null=True, blank=True)
+068:     last_read_timestamp = models.DateTimeField(default=timezone.now)
+069: 
+070:     class Meta:
+071:         unique_together = ('user', 'room', 'conversation')
+072: 
+073:     def __str__(self):
+074:         target = self.room.slug if self.room else f"DM({self.conversation.id})"
+075:         return f"{self.user.username} - {target} - {self.last_read_timestamp}"
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\MODELS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\VIEWS.PY] BAŞLANGIÇ
+============================================================
+001: # chat/views.py (TÜM DÜZELTMELER YAPILMIŞ NİHAİ HALİ)
+002: 
+003: from rest_framework import generics, viewsets, status, permissions
+004: from rest_framework.decorators import api_view, permission_classes
+005: from rest_framework.response import Response
+006: from django.http import JsonResponse
+007: from django.views.decorators.http import require_http_methods
+008: from django.views.decorators.csrf import csrf_exempt
+009: from django.db.models import Count, Q
+010: import json
+011: import os
+012: from django.conf import settings
+013: from django.utils import timezone
+014: # <<< YENİ: Standart datetime kütüphanesinden timezone import edildi >>>
+015: from datetime import timezone as dt_timezone
+016: 
+017: from channels.layers import get_channel_layer
+018: from asgiref.sync import async_to_sync, sync_to_async
+019: 
+020: from .models import Message, Room, Conversation, UserProfile, UserChatStatus
+021: from .serializers import MessageSerializer, RoomSerializer, ConversationSerializer, UserProfileSerializer
+022: 
+023: ADMIN_USER = "Doğukan"
+024: 
+025: 
+026: @csrf_exempt
+027: @require_http_methods(["POST"])
+028: def clear_chat(request, room_name):
+029:     try:
+030:         data = json.loads(request.body)
+031:         if data.get('username') != ADMIN_USER: return JsonResponse({'error': 'Yetkiniz yok.'}, status=403)
+032:         room = Room.objects.get(slug=room_name)
+033:         deleted_count, _ = Message.objects.filter(room=room).delete()
+034:         print(f"[YÖNETİCİ İŞLEMİ] Sohbet temizlendi. Oda: '{room_name}', Silinen Mesaj Sayısı: {deleted_count}")
+035:         return JsonResponse({'status': 'ok', 'deleted_count': deleted_count})
+036:     except Room.DoesNotExist: return JsonResponse({'error': 'Oda bulunamadı.'}, status=404)
+037:     except Exception as e: return JsonResponse({'error': str(e)}, status=500)
+038: 
+039: 
+040: @require_http_methods(["GET"])
+041: def get_all_rooms(request):
+042:     try:
+043:         all_rooms = list(Room.objects.values('slug', 'channel_type').order_by('slug'))
+044:         general_room = next((r for r in all_rooms if r['slug'] == 'genel'), None)
+045:         other_rooms = sorted([r for r in all_rooms if r['slug'] != 'genel'], key=lambda x: x['slug'])
+046:         sorted_rooms = [general_room] + other_rooms if general_room else other_rooms
+047:         return JsonResponse(sorted_rooms, safe=False)
+048:     except Exception as e:
+049:         print(f"[API KRİTİK HATA] Oda listesi çekilirken hata oluştu: {e}")
+050:         return JsonResponse({'error': 'Internal server error', 'details': str(e)}, status=500)
+051: 
+052: 
+053: @api_view(['GET'])
+054: @permission_classes([permissions.AllowAny])
+055: def list_all_users(request):
+056:     all_users = UserProfile.objects.all().order_by('username')
+057:     serializer = UserProfileSerializer(all_users, many=True, context={'request': request})
+058:     return Response(serializer.data)
+059: 
+060: 
+061: @api_view(['GET'])
+062: @permission_classes([permissions.AllowAny])
+063: def get_user_profile(request, username):
+064:     try:
+065:         user_profile = UserProfile.objects.get(username=username)
+066:         serializer = UserProfileSerializer(user_profile, context={'request': request})
+067:         return Response(serializer.data)
+068:     except UserProfile.DoesNotExist:
+069:         return Response({'error': 'Kullanıcı bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+070: 
+071: 
+072: @api_view(['POST'])
+073: @permission_classes([permissions.AllowAny])
+074: def update_user_profile(request):
+075:     username = request.data.get('username')
+076:     if not username:
+077:         return Response({'error': 'Kullanıcı adı gerekli.'}, status=status.HTTP_400_BAD_REQUEST)
+078:     
+079:     try:
+080:         user_profile = UserProfile.objects.get(username=username)
+081:         
+082:         serializer = UserProfileSerializer(user_profile, data=request.data, partial=True, context={'request': request})
+083:         if serializer.is_valid():
+084:             serializer.save()
+085:             channel_layer = get_channel_layer()
+086:             async_to_sync(channel_layer.group_send)(
+087:                 'global_user_status',
+088:                 {
+089:                     'type': 'user_profile_update_handler',
+090:                     'user_data': serializer.data
+091:                 }
+092:             )
+093:             return Response(serializer.data)
+094:         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+095:     except UserProfile.DoesNotExist:
+096:         return Response({'error': 'Kullanıcı bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+097: 
+098: 
+099: class MessageHistoryView(generics.ListAPIView):
+100:     serializer_class = MessageSerializer
+101:     permission_classes = [permissions.AllowAny]
+102:     def get_queryset(self):
+103:         room_name = self.kwargs.get('room_name')
+104:         if room_name:
+105:             try:
+106:                 room = Room.objects.get(slug=room_name)
+107:                 return Message.objects.filter(room=room).select_related('reply_to').prefetch_related('reactions').order_by('-timestamp')[:50][::-1]
+108:             except Room.DoesNotExist: return Message.objects.none()
+109:         conversation_id = self.kwargs.get('conversation_id')
+110:         if conversation_id:
+111:             try:
+112:                 conv = Conversation.objects.get(id=conversation_id)
+113:                 return Message.objects.filter(conversation=conv).select_related('reply_to').prefetch_related('reactions').order_by('-timestamp')[:50][::-1]
+114:             except Conversation.DoesNotExist: return Message.objects.none()
+115:         return Message.objects.none()
+116: 
+117: 
+118: @api_view(['GET'])
+119: @permission_classes([permissions.AllowAny])
+120: def list_conversations(request):
+121:     username = request.query_params.get('username')
+122:     if not username: return Response({'error': 'Kullanıcı adı gerekli.'}, status=status.HTTP_400_BAD_REQUEST)
+123:     try:
+124:         user_profile = UserProfile.objects.get(username=username)
+125:         conversations = user_profile.conversations.all().prefetch_related('participants')
+126:         serializer = ConversationSerializer(conversations, many=True, context={'request': request})
+127:         return Response(serializer.data)
+128:     except UserProfile.DoesNotExist: return Response({'error': 'Kullanıcı bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+129:     except Exception as e: return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+130: 
+131: 
+132: @api_view(['POST'])
+133: @permission_classes([permissions.AllowAny])
+134: def get_or_create_conversation(request):
+135:     user1_username, user2_username = request.data.get('user1'), request.data.get('user2')
+136:     if not user1_username or not user2_username: return Response({'error': 'İki kullanıcı adı da gereklidir.'}, status=status.HTTP_400_BAD_REQUEST)
+137:     try:
+138:         user1, user2 = UserProfile.objects.get(username=user1_username), UserProfile.objects.get(username=user2_username)
+139:         conversation = Conversation.objects.annotate(num_participants=Count('participants')).filter(participants=user1).filter(participants=user2).filter(num_participants=2).first()
+140:         if not conversation:
+141:             conversation = Conversation.objects.create()
+142:             conversation.participants.add(user1, user2)
+143:         serializer = ConversationSerializer(conversation, context={'request': request})
+144:         return Response(serializer.data)
+145:     except UserProfile.DoesNotExist: return Response({'error': 'Kullanıcılardan biri bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+146:     except Exception as e: return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+147: 
+148: 
+149: @api_view(['POST'])
+150: @permission_classes([permissions.AllowAny])
+151: def upload_image(request):
+152:     image_file, username, room_slug, conversation_id, content, reply_to_id = (
+153:         request.FILES.get('image'), request.data.get('username'), request.data.get('room_slug'),
+154:         request.data.get('conversation_id'), request.data.get('content', ''), request.data.get('reply_to')
+155:     )
+156:     if not image_file or not username or (not room_slug and not conversation_id): 
+157:         return Response({'error': 'Eksik bilgi.'}, status=status.HTTP_400_BAD_REQUEST)
+158:     
+159:     try:
+160:         room, conversation = None, None
+161:         target_group_name = None
+162:         if room_slug: 
+163:             room = Room.objects.get(slug=room_slug)
+164:             target_group_name = f'chat_{room.slug}'
+165:         elif conversation_id: 
+166:             conversation = Conversation.objects.get(id=conversation_id)
+167:             target_group_name = f'dm_{conversation.id}'
+168:         
+169:         message_data = create_message_and_get_data(
+170:             target_model_instance=room or conversation,
+171:             username=username, 
+172:             image_file=image_file, 
+173:             content=content or None,
+174:             reply_to_id=reply_to_id
+175:         )
+176: 
+177:         channel_layer = get_channel_layer()
+178:         event_type = 'chat_message_handler' if room else 'dm_message_handler'
+179:         
+180:         if message_data.get('image'):
+181:              message_data['image_url'] = request.build_absolute_uri(message_data['image'])
+182:         
+183:         async_to_sync(channel_layer.group_send)(target_group_name, {'type': event_type, **message_data})
+184:         print(f"[ANONS GÖNDERİLDİ - Resim] Grup: {target_group_name}")
+185: 
+186:         notification_data = {k:v for k,v in message_data.items() if k not in ['image']}
+187:         notification_data['content'] = "[Resim]"
+188:         async_to_sync(channel_layer.group_send)(
+189:             'global_voice_status', 
+190:             {
+191:                 'type': 'global_message_notification', 
+192:                 **notification_data, 
+193:                 'room_slug': room_slug, 
+194:                 'conversation_id': conversation_id
+195:             }
+196:         )
+197:         
+198:         return Response(message_data, status=status.HTTP_201_CREATED)
+199:         
+200:     except (Room.DoesNotExist, Conversation.DoesNotExist): return Response({'error': 'Hedef sohbet bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+201:     except Exception as e: return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+202: 
+203: 
+204: @api_view(['GET'])
+205: @permission_classes([permissions.AllowAny])
+206: def list_default_avatars(request):
+207:     try:
+208:         avatar_dir = os.path.join(settings.BASE_DIR, 'frontend', 'public', 'avatars')
+209:         if not os.path.isdir(avatar_dir):
+210:             return Response([], status=status.HTTP_200_OK)
+211:         image_extensions = ['.png', '.jpg', '.jpeg', '.svg', '.gif']
+212:         filenames = [f for f in os.listdir(avatar_dir) if os.path.splitext(f)[1].lower() in image_extensions]
+213:         urls = [f'/avatars/{filename}' for filename in filenames]
+214:         return Response(urls)
+215:     except Exception as e:
+216:         print(f"[HATA] Varsayılan avatarlar listelenemedi: {e}")
+217:         return Response({'error': 'Avatarlar alınamadı.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+218: 
+219: @api_view(['GET'])
+220: @permission_classes([permissions.AllowAny])
+221: def get_unread_counts(request):
+222:     username = request.query_params.get('username')
+223:     if not username:
+224:         return Response({'error': 'Kullanıcı adı gerekli.'}, status=status.HTTP_400_BAD_REQUEST)
+225: 
+226:     try:
+227:         user = UserProfile.objects.get(username=username)
+228:     except UserProfile.DoesNotExist:
+229:         return Response({'error': 'Kullanıcı bulunamadı.'}, status=status.HTTP_404_NOT_FOUND)
+230: 
+231:     unread_counts = {}
+232:     
+233:     rooms = Room.objects.all()
+234:     for room in rooms:
+235:         try:
+236:             status = UserChatStatus.objects.get(user=user, room=room)
+237:             last_read = status.last_read_timestamp
+238:         except UserChatStatus.DoesNotExist:
+239:             # <<< DEĞİŞİKLİK BURADA: Hatalı olan timezone.utc, dt_timezone.utc ile düzeltildi >>>
+240:             last_read = timezone.datetime.min.replace(tzinfo=dt_timezone.utc)
+241:         
+242:         count = Message.objects.filter(
+243:             room=room, 
+244:             timestamp__gt=last_read
+245:         ).exclude(username=username).count()
+246:         
+247:         if count > 0:
+248:             unread_counts[f'room-{room.slug}'] = count
+249: 
+250:     conversations = user.conversations.all()
+251:     for conv in conversations:
+252:         try:
+253:             status = UserChatStatus.objects.get(user=user, conversation=conv)
+254:             last_read = status.last_read_timestamp
+255:         except UserChatStatus.DoesNotExist:
+256:             # <<< DEĞİŞİKLİK BURADA: Hatalı olan timezone.utc, dt_timezone.utc ile düzeltildi >>>
+257:             last_read = timezone.datetime.min.replace(tzinfo=dt_timezone.utc)
+258:             
+259:         count = Message.objects.filter(
+260:             conversation=conv, 
+261:             timestamp__gt=last_read
+262:         ).exclude(username=username).count()
+263:         
+264:         if count > 0:
+265:             unread_counts[f'dm-{conv.id}'] = count
+266:             
+267:     return Response(unread_counts)
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\VIEWS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\ROUTING.PY] BAŞLANGIÇ
+============================================================
+001: # chat/routing.py (TAM HALİ)
+002: 
+003: from django.urls import re_path
+004: from . import consumers
+005: 
+006: global_routing = [
+007:     re_path(r'ws/status/$', consumers.GlobalStatusConsumer.as_asgi()),
+008: ]
+009: 
+010: chat_voice_routing = [
+011:     re_path(r'ws/chat/(?P<room_name>\w+)/$', consumers.ChatConsumer.as_asgi()),
+012:     re_path(r'ws/voice/(?P<room_name>\w+)/$', consumers.VoiceConsumer.as_asgi()),
+013: ]
+014: 
+015: dm_routing = [
+016:     re_path(r'ws/dm/(?P<conversation_id>\d+)/$', consumers.DMConsumer.as_asgi()),
+017: ]
+018: 
+019: websocket_urlpatterns = global_routing + chat_voice_routing + dm_routing
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\ROUTING.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\URLS.PY] BAŞLANGIÇ
+============================================================
+001: # chat/urls.py (YENİ AVATAR VE OKUNMAMIŞ URL'LERİ EKLENDİ)
+002: 
+003: from django.urls import path
+004: from . import views
+005: 
+006: urlpatterns = [
+007:     # Mesajlar
+008:     path('messages/history/room/<str:room_name>/', views.MessageHistoryView.as_view(), name='message-history-room'),
+009:     path('messages/history/dm/<int:conversation_id>/', views.MessageHistoryView.as_view(), name='message-history-dm'),
+010:     path('messages/upload_image/', views.upload_image, name='upload-image'),
+011: 
+012:     # Odalar
+013:     path('rooms/list/', views.get_all_rooms, name='room-list'),
+014:     path('rooms/<str:room_name>/clear/', views.clear_chat, name='clear-chat'),
+015: 
+016:     # DM
+017:     path('conversations/', views.list_conversations, name='list-conversations'),
+018:     path('conversations/find_or_create/', views.get_or_create_conversation, name='get-or-create-conversation'),
+019: 
+020:     # Kullanıcılar
+021:     path('users/list_all/', views.list_all_users, name='list-all-users'),
+022:     path('users/profile/<str:username>/', views.get_user_profile, name='get-user-profile'),
+023:     path('users/update_profile/', views.update_user_profile, name='update-user-profile'),
+024:     path('users/default_avatars/', views.list_default_avatars, name='list-default-avatars'),
+025:     path('users/unread_counts/', views.get_unread_counts, name='get-unread-counts'),
+026: ]
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\URLS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\SERIALIZERS.PY] BAŞLANGIÇ
+============================================================
+001: # chat/serializers.py (REAKSİYON VE YANITLAMA EKLENDİ)
+002: 
+003: from rest_framework import serializers
+004: from .models import Message, Room, Conversation, UserProfile, Reaction
+005: 
+006: class UserProfileSerializer(serializers.ModelSerializer):
+007:     class Meta:
+008:         model = UserProfile
+009:         fields = ['username', 'avatar', 'status_message', 'last_seen']
+010: 
+011: class RoomSerializer(serializers.ModelSerializer):
+012:     class Meta:
+013:         model = Room
+014:         fields = ['name', 'slug', 'channel_type']
+015: 
+016: class ReactionSerializer(serializers.ModelSerializer):
+017:     class Meta:
+018:         model = Reaction
+019:         fields = ['id', 'username', 'emoji']
+020: 
+021: class RepliedMessageSerializer(serializers.ModelSerializer):
+022:     class Meta:
+023:         model = Message
+024:         fields = ['id', 'username', 'content']
+025: 
+026: class MessageSerializer(serializers.ModelSerializer):
+027:     image_url = serializers.ImageField(source='image', read_only=True)
+028:     reactions = ReactionSerializer(many=True, read_only=True)
+029:     reply_to = RepliedMessageSerializer(read_only=True)
+030: 
+031:     class Meta:
+032:         model = Message
+033:         fields = [
+034:             'id', 'room', 'conversation', 'username', 
+035:             'content', 'image', 'image_url', 'timestamp', 'is_edited',
+036:             'reactions', 'reply_to'
+037:         ]
+038:         read_only_fields = ['timestamp']
+039: 
+040: class ConversationParticipantSerializer(serializers.ModelSerializer):
+041:     class Meta:
+042:         model = UserProfile
+043:         fields = ['username', 'avatar', 'status_message']
+044: 
+045: class ConversationSerializer(serializers.ModelSerializer):
+046:     participants = ConversationParticipantSerializer(many=True, read_only=True)
+047: 
+048:     class Meta:
+049:         model = Conversation
+050:         fields = ['id', 'participants', 'created_at']
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\SERIALIZERS.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\__INIT__.PY] BAŞLANGIÇ
+============================================================
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\CHAT\__INIT__.PY] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\APP.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/App.js (TÜM DÜZELTMELER YAPILMIŞ NİHAİ HALİ)
+002: 
+003: import React, { useState, useEffect, useRef, useCallback } from 'react';
+004: import RoomList from './RoomList';
+005: import ChatUserList from './ChatUserList';
+006: import UserProfilePanel from './UserProfilePanel';
+007: import Message from './Message';
+008: import MessageEditForm from './MessageEditForm';
+009: import ImageModal from './ImageModal';
+010: import ReplyPreview from './ReplyPreview';
+011: 
+012: const NGROK_HOST = 'pseudostudiously-reflexional-clara.ngrok-free.dev';
+013: const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+014: const API_HOST = isLocal ? 'localhost:8000' : NGROK_HOST;
+015: const API_PROTOCOL = isLocal ? 'http' : 'https';
+016: const WS_PROTOCOL = isLocal ? 'ws' : 'wss';
+017: const MESSAGE_HISTORY_ROOM_URL = `${API_PROTOCOL}://${API_HOST}/api/messages/history/room/`;
+018: const MESSAGE_HISTORY_DM_URL = `${API_PROTOCOL}://${API_HOST}/api/messages/history/dm/`;
+019: const ROOM_LIST_URL = `${API_PROTOCOL}://${API_HOST}/api/rooms/list/`;
+020: const CONVERSATION_LIST_URL = `${API_PROTOCOL}://${API_HOST}/api/conversations/`;
+021: const GET_OR_CREATE_CONVERSATION_URL = `${API_PROTOCOL}://${API_HOST}/api/conversations/find_or_create/`;
+022: const IMAGE_UPLOAD_URL = `${API_PROTOCOL}://${API_HOST}/api/messages/upload_image/`;
+023: const ALL_USERS_URL = `${API_PROTOCOL}://${API_HOST}/api/users/list_all/`;
+024: const UPDATE_PROFILE_URL = `${API_PROTOCOL}://${API_HOST}/api/users/update_profile/`;
+025: const DEFAULT_AVATARS_URL = `${API_PROTOCOL}://${API_HOST}/api/users/default_avatars/`;
+026: const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
+027: const ADMIN_USER = 'Doğukan';
+028: 
+029: const EMOJI_LIST = ['😀', '😂', '😍', '🤔', '👍', '🙏', '🔥', '🎉', '💡', '🚀', '💻', '💡', '📌', '🛠️', '⚙️', '🐈', '🐕', '❤️', '🌟', '😊'];
+030: 
+031: const getTemporaryId = () => Date.now() + Math.floor(Math.random() * 1000);
+032: 
+033: function App() {
+034:     const [messages, setMessages] = useState([]);
+035:     const [messageInput, setMessageInput] = useState('');
+036:     const [username, setUsername] = useState('');
+037:     const [isAuthenticated, setIsAuthenticated] = useState(false);
+038:     const [roomOptions, setRoomOptions] = useState([]);
+039:     const [conversations, setConversations] = useState([]);
+040:     const [activeChat, setActiveChat] = useState({ type: 'room', id: 'genel' });
+041:     const [isConnected, setIsConnected] = useState(false);
+042:     const [unreadCounts, setUnreadCounts] = useState({});
+043:     const [voiceUsers, setVoiceUsers] = useState({});
+044:     const [isInVoiceChat, setIsInVoiceChat] = useState(false);
+045:     const [typingUsers, setTypingUsers] = useState([]);
+046:     const [remoteVolumes, setRemoteVolumes] = useState({});
+047:     const [currentVoiceRoom, setCurrentVoiceRoom] = useState(null);
+048:     const [chatUsers, setChatUsers] = useState([]);
+049:     const [pendingJoinRoom, setPendingJoinRoom] = useState(null);
+050:     const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+051:     const [isMuted, setIsMuted] = useState(false);
+052:     const [isUploading, setIsUploading] = useState(false);
+053:     const [isDragging, setIsDragging] = useState(false);
+054:     const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+055:     const [onlineUsers, setOnlineUsers] = useState([]);
+056:     const [allUsers, setAllUsers] = useState([]);
+057:     const [hasFetchedAllUsers, setHasFetchedAllUsers] = useState(false);
+058:     const [showProfilePanel, setShowProfilePanel] = useState(false);
+059:     const [defaultAvatars, setDefaultAvatars] = useState([]);
+060:     const [editingMessage, setEditingMessage] = useState(null);
+061:     const [zoomedImage, setZoomedImage] = useState(null);
+062:     const [replyingTo, setReplyingTo] = useState(null);
+063:     const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
+064: 
+065:     const ws = useRef(null);
+066:     const statusWsRef = useRef(null);
+067:     const messagesEndRef = useRef(null);
+068:     const notificationSoundRef = useRef(null);
+069:     const voiceWsRef = useRef(null);
+070:     const peerConnectionsRef = useRef({});
+071:     const localStreamRef = useRef(null);
+072:     const typingTimeoutRef = useRef(null);
+073:     const localVideoRefs = useRef(null);
+074:     const remoteVideoRefs = useRef({});
+075:     const fileInputRef = useRef(null);
+076:     const activeChatRef = useRef(activeChat);
+077:     const dragCounter = useRef(0);
+078:     const emojiPickerRef = useRef(null);
+079:     const messageInputRef = useRef(null);
+080:     const temporaryMessageIds = useRef(new Set());
+081: 
+082:     const getDeterministicAvatar = useCallback((username) => {
+083:         if (!username || defaultAvatars.length === 0) {
+084:             return 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+085:         }
+086:         let hash = 0;
+087:         for (let i = 0; i < username.length; i++) {
+088:             hash = username.charCodeAt(i) + ((hash << 5) - hash);
+089:         }
+090:         const index = Math.abs(hash % defaultAvatars.length);
+091:         return defaultAvatars[index];
+092:     }, [defaultAvatars]);
+093: 
+094:     useEffect(() => { activeChatRef.current = activeChat; }, [activeChat]);
+095:     useEffect(() => { notificationSoundRef.current = new Audio('/sounds/notification.mp3'); }, []);
+096: 
+097:     const isAdmin = username === ADMIN_USER;
+098: 
+099:     const fetchRoomOptions = useCallback(async () => {
+100:         try {
+101:             const response = await fetch(ROOM_LIST_URL);
+102:             const data = await response.json();
+103:             if (Array.isArray(data)) setRoomOptions(data);
+104:         } catch (error) { console.error("[HATA] Oda listesi çekilemedi:", error); }
+105:     }, []);
+106: 
+107:     const fetchConversations = useCallback(async () => {
+108:         if (!username) return;
+109:         try {
+110:             const response = await fetch(`${CONVERSATION_LIST_URL}?username=${encodeURIComponent(username)}`);
+111:             const data = await response.json();
+112:             if (response.ok) setConversations(data);
+113:             else console.error("DM listesi alınamadı:", data.error);
+114:         } catch (error) { console.error("[HATA] DM listesi çekilemedi:", error); }
+115:     }, [username]);
+116: 
+117:     const fetchAllUsers = useCallback(async () => {
+118:         if (!username) return;
+119:         try {
+120:             const response = await fetch(ALL_USERS_URL);
+121:             const data = await response.json();
+122:             if (response.ok && Array.isArray(data)) {
+123:                 setAllUsers(data.sort((a, b) => a.username.localeCompare(b.username)));
+124:             } else {
+125:                 setAllUsers([]);
+126:             }
+127:         } catch (error) {
+128:             console.error("[HATA] Tüm kullanıcılar çekilemedi:", error);
+129:             setAllUsers([]);
+130:         } finally {
+131:             setHasFetchedAllUsers(true);
+132:         }
+133:     }, [username]);
+134: 
+135:     const handleProfileUpdate = useCallback((updatedUserData) => {
+136:         setAllUsers(prevUsers => {
+137:             const userExists = prevUsers.some(u => u.username === updatedUserData.username);
+138:             if (userExists) {
+139:                 return prevUsers.map(user => 
+140:                     user.username === updatedUserData.username ? { ...user, ...updatedUserData } : user
+141:                 );
+142:             } else {
+143:                 return [...prevUsers, updatedUserData].sort((a, b) => a.username.localeCompare(b.username));
+144:             }
+145:         });
+146:         setConversations(prev => prev.map(conv => ({
+147:             ...conv,
+148:             participants: conv.participants.map(p => p.username === updatedUserData.username ? { ...p, ...updatedUserData } : p)
+149:         })));
+150:     }, []);
+151:     
+152:     const sendRoomManagementSignal = useCallback((type, roomSlug, channelType) => {
+153:         const payload = { type, room_slug: roomSlug, ...(type === 'add_room' && { channel_type: channelType }), username };
+154:         const ws = statusWsRef.current;
+155:         if (!ws || ws.readyState !== WebSocket.OPEN) {
+156:             console.error(`[WS HATA] Global Status WS KAPALI. İşlem: ${type} iptal.`);
+157:             fetchRoomOptions();
+158:             return;
+159:         }
+160:         try { ws.send(JSON.stringify(payload)); } catch (error) { console.error(`[WS GÖNDERİM HATA]: ${error}`); fetchRoomOptions(); }
+161:     }, [username, fetchRoomOptions]);
+162: 
+163:     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+164:     const sendSignal = useCallback((signal) => { if (voiceWsRef.current?.readyState === WebSocket.OPEN) voiceWsRef.current.send(JSON.stringify(signal)); }, []);
+165:     
+166:     const handleVoiceStateUpdate = useCallback((data) => {
+167:         if (data.initial_load) { setVoiceUsers(data.rooms); return; }
+168:         setVoiceUsers(prev => ({ ...prev, ...data.rooms }));
+169:     }, []);
+170: 
+171:     const setRemoteVolume = useCallback((partnerUsername, volume) => {
+172:         setRemoteVolumes(prev => ({ ...prev, [partnerUsername]: volume }));
+173:         const audioEl = document.getElementById(`audio-${partnerUsername}`);
+174:         if (audioEl) audioEl.volume = volume / 100;
+175:     }, []);
+176: 
+177:     const handleRemoteStream = useCallback((partnerUsername, stream) => {
+178:         let audioEl = document.getElementById(`audio-${partnerUsername}`);
+179:         if (!audioEl) {
+180:             audioEl = document.createElement('audio');
+181:             audioEl.id = `audio-${partnerUsername}`;
+182:             audioEl.autoplay = true;
+183:             document.body.appendChild(audioEl);
+184:         }
+185:         audioEl.srcObject = stream;
+186:         audioEl.volume = (remoteVolumes[partnerUsername] || 100) / 100;
+187:         const videoEl = remoteVideoRefs.current[partnerUsername];
+188:         if (videoEl) videoEl.srcObject = stream;
+189:     }, [remoteVolumes]);
+190: 
+191:     const createPeerConnection = useCallback((partnerUsername, stream) => {
+192:         const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+193:         stream.getTracks().forEach(track => pc.addTrack(track, stream));
+194:         pc.ontrack = (event) => handleRemoteStream(partnerUsername, event.streams[0]);
+195:         pc.onicecandidate = (event) => {
+196:             if (event.candidate) sendSignal({ type: 'candidate', candidate: event.candidate, receiver_username: partnerUsername, sender_username: username });
+197:         };
+198:         peerConnectionsRef.current[partnerUsername] = pc;
+199:         return pc;
+200:     }, [username, sendSignal, handleRemoteStream]);
+201:     
+202:     const leaveVoiceChat = useCallback(() => {
+203:         localStreamRef.current?.getTracks().forEach(track => track.stop());
+204:         localStreamRef.current = null;
+205:         Object.keys(peerConnectionsRef.current).forEach(p => {
+206:             document.getElementById(`audio-${p}`)?.remove();
+207:             if (remoteVideoRefs.current[p]) remoteVideoRefs.current[p] = null;
+208:         });
+209:         if (voiceWsRef.current?.readyState === WebSocket.OPEN) {
+210:             const room = voiceWsRef.current.url.match(/voice\/([^/]+)/)?.[1];
+211:             sendSignal({ type: 'leave', sender_username: username, room });
+212:         }
+213:         voiceWsRef.current?.close(1000, 'manual_leave');
+214:         voiceWsRef.current = null;
+215:         Object.values(peerConnectionsRef.current).forEach(pc => pc.close());
+216:         peerConnectionsRef.current = {};
+217:         setCurrentVoiceRoom(null);
+218:         setIsInVoiceChat(false);
+219:     }, [username, sendSignal]);
+220: 
+221:     const joinVoiceChat = useCallback(async (roomSlug) => {
+222:         if (voiceWsRef.current) return;
+223:         let stream;
+224:         try {
+225:             const mediaConstraints = { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: true };
+226:             stream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+227:             stream.getVideoTracks().forEach(track => track.enabled = false);
+228:             setIsVideoEnabled(false);
+229:             setIsMuted(false);
+230:             localStreamRef.current = stream;
+231:         } catch (error) {
+232:             alert("Mikrofon ve Kamera izni gereklidir. Hata: " + error.message);
+233:             return;
+234:         }
+235:         const encodedUsername = encodeURIComponent(username);
+236:         const voiceWs = new WebSocket(`${WS_PROTOCOL}://${API_HOST}/ws/voice/${roomSlug}/?username=${encodedUsername}`);
+237:         voiceWsRef.current = voiceWs;
+238:         voiceWs.onerror = () => { leaveVoiceChat(); };
+239:         voiceWs.onopen = () => { setIsInVoiceChat(true); setCurrentVoiceRoom(roomSlug); sendSignal({ type: 'join', sender_username: username, room: roomSlug }); };
+240:         voiceWs.onmessage = async (event) => {
+241:             const signal = JSON.parse(event.data);
+242:             const sender = signal.sender_username;
+243:             if (signal.type === 'voice_state_update' || sender === username) return;
+244:             let pc = peerConnectionsRef.current[sender];
+245:             if (!pc) {
+246:                 if (signal.type !== 'offer' && signal.type !== 'join') return;
+247:                 pc = createPeerConnection(sender, stream);
+248:             }
+249:             if (signal.type === 'join') {
+250:                 const offer = await pc.createOffer();
+251:                 await pc.setLocalDescription(offer);
+252:                 sendSignal({ type: 'offer', sdp: pc.localDescription, receiver_username: sender, sender_username: username });
+253:             } else if (signal.type === 'offer') {
+254:                 if (pc.signalingState !== 'stable' && pc.signalingState !== 'have-local-pranswer') return;
+255:                 await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+256:                 const answer = await pc.createAnswer();
+257:                 await pc.setLocalDescription(answer);
+258:                 sendSignal({ type: 'answer', sdp: pc.localDescription, receiver_username: sender, sender_username: username });
+259:             } else if (signal.type === 'answer') {
+260:                 if (pc.signalingState !== 'have-local-offer') return;
+261:                 await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+262:             } else if (signal.type === 'candidate' && pc.remoteDescription && signal.candidate) {
+263:                 try { await pc.addIceCandidate(new RTCIceCandidate(signal.candidate)); } catch (e) { console.error('ICE adayı eklenirken hata:', e); }
+264:             }
+265:         };
+266:         voiceWs.onclose = () => { leaveVoiceChat(); };
+267:     }, [username, createPeerConnection, sendSignal, leaveVoiceChat]);
+268: 
+269:     const toggleVideo = () => {
+270:         if (localStreamRef.current) {
+271:             const videoTrack = localStreamRef.current.getVideoTracks()[0];
+272:             if (videoTrack) {
+273:                 videoTrack.enabled = !videoTrack.enabled;
+274:                 setIsVideoEnabled(videoTrack.enabled);
+275:             }
+276:         }
+277:     };
+278:     
+279:     const toggleMute = useCallback(() => {
+280:         if (localStreamRef.current) {
+281:             const audioTrack = localStreamRef.current.getAudioTracks()[0];
+282:             if (audioTrack) {
+283:                 audioTrack.enabled = !audioTrack.enabled;
+284:                 setIsMuted(!audioTrack.enabled);
+285:             }
+286:         }
+287:     }, []);
+288: 
+289:     const handleClearChat = useCallback(async () => {
+290:         if (!isAdmin || !window.confirm(`'${activeChat.id}' odasındaki tüm mesajları kalıcı olarak silmek istediğinizden emin misiniz?`)) return;
+291:         try {
+292:             const response = await fetch(`${API_PROTOCOL}://${API_HOST}/api/rooms/${activeChat.id}/clear/`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: username }) });
+293:             if (response.ok) {
+294:                 setMessages([{ type: 'system_message', id: getTemporaryId(), message: `Sohbet yönetici tarafından temizlendi.` }]);
+295:             } else {
+296:                 const data = await response.json();
+297:                 alert(`Hata: ${data.error || 'Sohbet temizlenemedi.'}`);
+298:             }
+299:         } catch (error) {
+300:             alert("Sohbet temizlenirken bir ağ hatası oluştu.");
+301:         }
+302:     }, [activeChat, isAdmin, username]);
+303: 
+304:     const connectWebSocket = useCallback(() => {
+305:         if (!isAuthenticated || !activeChat.id) return;
+306:         ws.current?.close(1000, 'chat_change');
+307:         setTypingUsers([]);
+308:         
+309:         const encodedUsername = encodeURIComponent(username);
+310:         let DYNAMIC_WS_URL;
+311:         if (activeChat.type === 'room') DYNAMIC_WS_URL = `${WS_PROTOCOL}://${API_HOST}/ws/chat/${activeChat.id}/?username=${encodedUsername}`;
+312:         else if (activeChat.type === 'dm') DYNAMIC_WS_URL = `${WS_PROTOCOL}://${API_HOST}/ws/dm/${activeChat.id}/?username=${encodedUsername}`;
+313:         else return;
+314: 
+315:         const newWs = new WebSocket(DYNAMIC_WS_URL);
+316:         ws.current = newWs;
+317: 
+318:         newWs.onopen = () => {
+319:             console.log(`WebSocket bağlandı: ${DYNAMIC_WS_URL}`);
+320:             let historyUrl;
+321:             if (activeChat.type === 'room') historyUrl = `${MESSAGE_HISTORY_ROOM_URL}${activeChat.id}/`;
+322:             else if (activeChat.type === 'dm') historyUrl = `${MESSAGE_HISTORY_DM_URL}${activeChat.id}/`;
+323: 
+324:             if (historyUrl) {
+325:                 fetch(historyUrl).then(res => res.json()).then(data => {
+326:                     setMessages(Array.isArray(data) ? data : []);
+327:                 }).catch(err => console.error("Geçmiş yüklenemedi:", err));
+328:             }
+329:             setIsConnected(true);
+330:         };
+331: 
+332:         newWs.onmessage = (event) => {
+333:             const data = JSON.parse(event.data);
+334:             
+335:             if (data.type === 'system_message') {
+336:                 setMessages(prev => [...prev, { ...data, id: getTemporaryId() }]);
+337:             } else if (data.type === 'message_deleted') {
+338:                 setMessages(prev => prev.filter(msg => msg.id !== data.message_id));
+339:             } else if (data.type === 'message_updated') {
+340:                 setMessages(prev => prev.map(msg => msg.id === data.message.id ? data.message : msg));
+341:             } 
+342:             else if (data.type === 'chat' || data.type === 'dm') {
+343:                 setMessages((prev) => {
+344:                     const tempMessageExists = data.temp_id && prev.some(msg => msg.temp_id === data.temp_id);
+345:                     if (tempMessageExists) {
+346:                         return prev.map(msg => (msg.temp_id === data.temp_id ? data : msg));
+347:                     }
+348:                     if (!prev.some(msg => msg.id === data.id)) {
+349:                         return [...prev, data];
+350:                     }
+351:                     return prev; 
+352:                 });
+353:             } else if (data.type === 'chat_user_list_update') {
+354:                 setChatUsers(data.users);
+355:             } else if (data.type === 'typing_status_update') {
+356:                 setTypingUsers(prev => {
+357:                     const isTyping = prev.includes(data.username);
+358:                     if (data.is_typing && !isTyping) return [...prev, data.username];
+359:                     if (!data.is_typing && isTyping) return prev.filter(u => u !== data.username);
+360:                     return prev;
+361:                 });
+362:             }
+363:         };
+364:         newWs.onclose = () => { console.log(`WebSocket kapandı: ${DYNAMIC_WS_URL}`); setIsConnected(false); setTypingUsers([]); };
+365:         newWs.onerror = (err) => { console.error("WebSocket Hatası:", err); setIsConnected(false); };
+366:         
+367:     }, [isAuthenticated, activeChat, username]); 
+368: 
+369:     useEffect(() => {
+370:         const key = `${activeChat.type}-${activeChat.id}`;
+371:         if (unreadCounts[key] > 0) {
+372:             setUnreadCounts(prev => ({ ...prev, [key]: 0 }));
+373:         }
+374:     }, [activeChat, unreadCounts]); 
+375: 
+376:     useEffect(() => { const stored = localStorage.getItem('chat_username'); if (stored) { setUsername(stored); setIsAuthenticated(true); } }, []);
+377:     
+378:     // <<< DEĞİŞİKLİK: fetchInitialData içinden fetchUnreadCounts kaldırıldı >>>
+379:     useEffect(() => {
+380:         const fetchInitialData = async () => {
+381:             if (isAuthenticated) {
+382:                 await fetchAllUsers();
+383:                 await fetchRoomOptions();
+384:                 await fetchConversations();
+385:                 setIsInitialDataLoaded(true);
+386:             }
+387:         };
+388:         fetchInitialData();
+389:     }, [isAuthenticated, fetchAllUsers, fetchRoomOptions, fetchConversations]);
+390:     
+391:     useEffect(() => {
+392:         const fetchDefaultAvatars = async () => {
+393:             try {
+394:                 const response = await fetch(DEFAULT_AVATARS_URL);
+395:                 const data = await response.json();
+396:                 if (response.ok && Array.isArray(data)) {
+397:                     setDefaultAvatars(data);
+398:                 }
+399:             } catch (error) {
+400:                 console.error("Varsayılan avatarlar çekilemedi:", error);
+401:             }
+402:         };
+403:         fetchDefaultAvatars();
+404:     }, []);
+405:     
+406:     useEffect(() => {
+407:         if (isInitialDataLoaded) {
+408:             connectWebSocket();
+409:         }
+410:     }, [isInitialDataLoaded, connectWebSocket]);
+411:     
+412:     useEffect(() => { if (!isInVoiceChat && pendingJoinRoom) { joinVoiceChat(pendingJoinRoom); setPendingJoinRoom(null); } }, [isInVoiceChat, pendingJoinRoom, joinVoiceChat]);
+413:     useEffect(scrollToBottom, [messages]);
+414:     useEffect(() => { if (isInVoiceChat && localStreamRef.current && localVideoRefs.current) { localVideoRefs.current.srcObject = localStreamRef.current; } }, [isInVoiceChat]);
+415:     
+416:     useEffect(() => {
+417:         function handleClickOutside(event) {
+418:             if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target) && !event.target.closest('button')) {
+419:                 setIsEmojiPickerOpen(false);
+420:             }
+421:         }
+422:         document.addEventListener("mousedown", handleClickOutside);
+423:         return () => document.removeEventListener("mousedown", handleClickOutside);
+424:     }, []);
+425: 
+426:     let chatTitle = 'Pawcord';
+427:     if (isAuthenticated) {
+428:         if (activeChat.type === 'room') {
+429:             chatTitle = `# ${activeChat.id}`;
+430:         } else if (activeChat.type === 'dm') {
+431:             const conversation = conversations.find(c => c.id === activeChat.id);
+432:             const otherUser = conversation?.participants.find(p => p.username !== username);
+433:             chatTitle = `@ ${otherUser ? otherUser.username : '...'}`;
+434:         }
+435:     }
+436:     
+437:     useEffect(() => {
+438:         const onFocus = () => { document.title = `${chatTitle} - Pawcord`; };
+439:         window.addEventListener('focus', onFocus);
+440:         return () => window.removeEventListener('focus', onFocus);
+441:     }, [chatTitle]);
+442: 
+443:     // <<< DEĞİŞİKLİK: Global Status WebSocket'i güncellendi >>>
+444:     useEffect(() => {
+445:         if (!isAuthenticated || !isInitialDataLoaded) return; 
+446:         
+447:         const encodedUsername = encodeURIComponent(username);
+448:         const STATUS_WS_URL = `${WS_PROTOCOL}://${API_HOST}/ws/status/?username=${encodedUsername}`;
+449:         
+450:         if (statusWsRef.current) {
+451:              statusWsRef.current.close(1000, 'reconnect_initiated');
+452:              statusWsRef.current = null;
+453:         }
+454:         
+455:         const newStatusWs = new WebSocket(STATUS_WS_URL);
+456:         statusWsRef.current = newStatusWs;
+457:         
+458:         newStatusWs.onopen = () => console.log("Global Status WS BAĞLANDI.");
+459:         newStatusWs.onmessage = (event) => {
+460:             const data = JSON.parse(event.data);
+461:             
+462:             if (data.type === 'voice_state_update') handleVoiceStateUpdate(data);
+463:             
+464:             if (data.type === 'online_user_list_update') {
+465:                 setOnlineUsers(data.online_users);
+466:             }
+467: 
+468:             if (data.type === 'user_profile_update') {
+469:                 handleProfileUpdate(data.user_data);
+470:             }
+471:             
+472:             // <<< YENİ: Başlangıçtaki okunmamış mesajları bu olay ile alıyoruz >>>
+473:             if (data.type === 'unread_counts_update') {
+474:                 console.log("Okunmamış mesajlar WS'den (başlangıç) alındı:", data.counts);
+475:                 setUnreadCounts(data.counts);
+476:             }
+477: 
+478:             if (data.type === 'global_message_notification') {
+479:                 const incomingChatKey = `${data.room_slug ? 'room' : 'dm'}-${data.room_slug || data.conversation_id}`;
+480:                 const currentChatKey = `${activeChatRef.current.type}-${activeChatRef.current.id}`;
+481:                 if (data.username !== username && incomingChatKey !== currentChatKey) {
+482:                     setUnreadCounts(prev => ({ ...prev, [incomingChatKey]: (prev[incomingChatKey] || 0) + 1 }));
+483:                     if (document.hidden) {
+484:                         notificationSoundRef.current?.play().catch(e => console.warn("Sesli bildirim oynatılamadı."));
+485:                         document.title = `(1) Yeni Mesaj - Pawcord`;
+486:                     }
+487:                 }
+488:             }
+489: 
+490:             if (data.type === 'room_list_update') {
+491:                 setRoomOptions(data.rooms);
+492:                 if (activeChatRef.current.type === 'room' && !data.rooms.map(r => r.slug).includes(activeChatRef.current.id)) {
+493:                     setActiveChat({ type: 'room', id: 'genel' });
+494:                     setMessages([]);
+495:                 }
+496:             }
+497:         };
+498:         newStatusWs.onerror = (err) => { console.error("Global Status WS Hatası:", err); };
+499: 
+500:         return () => {
+501:              if (newStatusWs && newStatusWs.readyState === WebSocket.OPEN) {
+502:                  newStatusWs.close(1000, 'component_cleanup');
+503:              }
+504:         };
+505:     }, [isAuthenticated, isInitialDataLoaded, username, handleVoiceStateUpdate, handleProfileUpdate, chatTitle]);
+506:     
+507:     // ... (Geri kalan tüm fonksiyonlar (handleRoomChange, handleDMClick, vs.) ve render metodu aynı) ...
+508:     const handleRoomChange = (newRoomSlug) => {
+509:         if (activeChat.type !== 'room' || activeChat.id !== newRoomSlug) {
+510:             setActiveChat({ type: 'room', id: newRoomSlug });
+511:             setMessages([]);
+512:             setEditingMessage(null);
+513:             setReplyingTo(null);
+514:         }
+515:     };
+516: 
+517:     const handleDMClick = async (targetUsername) => {
+518:         if (targetUsername === username) return;
+519:         try {
+520:             const response = await fetch(GET_OR_CREATE_CONVERSATION_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user1: username, user2: targetUsername }) });
+521:             const data = await response.json();
+522:             if (response.ok) {
+523:                 if (activeChat.type !== 'dm' || activeChat.id !== data.id) {
+524:                     setActiveChat({ type: 'dm', id: data.id, targetUser: targetUsername });
+525:                     setMessages([]);
+526:                     setEditingMessage(null);
+527:                     setReplyingTo(null);
+528:                     if (!conversations.some(c => c.id === data.id)) {
+529:                         fetchConversations();
+530:                     }
+531:                 }
+532:             } else {
+533:                 alert(`Hata: ${data.error || 'Konuşma başlatılamadı.'}`);
+534:             }
+535:         } catch (error) { console.error("Konuşma başlatma hatası:", error); }
+536:     };
+537:     
+538:     const handleEmojiClick = (emoji) => {
+539:         setMessageInput(prev => prev + emoji);
+540:         setIsEmojiPickerOpen(false);
+541:         messageInputRef.current?.focus();
+542:     };
+543: 
+544:     const handleMessageInputChange = (e) => {
+545:         const value = e.target.value;
+546:         setMessageInput(value);
+547:         if (!isConnected || !isAuthenticated) return;
+548:         
+549:         if (value.length > 0 && !typingTimeoutRef.current) {
+550:             ws.current?.send(JSON.stringify({ type: 'typing_start' }));
+551:         }
+552:         
+553:         clearTimeout(typingTimeoutRef.current);
+554:         typingTimeoutRef.current = setTimeout(() => { ws.current?.send(JSON.stringify({ type: 'typing_stop' })); typingTimeoutRef.current = null; }, 3000);
+555:     };
+556: 
+557:     const sendMessage = (e) => {
+558:         e.preventDefault();
+559:         if (!isAuthenticated || messageInput.trim() === '' || ws.current?.readyState !== WebSocket.OPEN) return;
+560:         
+561:         const messagePayload = { 'message': messageInput.trim(), 'username': username };
+562:         if (activeChat.type === 'room') messagePayload.type = 'chat_message';
+563:         else if (activeChat.type === 'dm') messagePayload.type = 'dm_message';
+564:         
+565:         if (replyingTo) {
+566:             messagePayload.reply_to = replyingTo.id;
+567:         }
+568: 
+569:         const tempId = getTemporaryId();
+570:         messagePayload.temp_id = tempId;
+571:         
+572:         const tempMessage = {
+573:             id: tempId,
+574:             temp_id: tempId,
+575:             username: username,
+576:             content: messageInput.trim(),
+577:             timestamp: new Date().toISOString(),
+578:             reply_to: replyingTo,
+579:             reactions: []
+580:         };
+581:         setMessages((prev) => [...prev, tempMessage]);
+582:         
+583:         ws.current.send(JSON.stringify(messagePayload));
+584:         
+585:         setMessageInput('');
+586:         setReplyingTo(null);
+587:         clearTimeout(typingTimeoutRef.current);
+588:         ws.current?.send(JSON.stringify({ type: 'typing_stop' }));
+589:         typingTimeoutRef.current = null;
+590:     };
+591: 
+592:     const uploadFile = useCallback(async (file) => {
+593:         if (!file || isUploading) return;
+594:         setIsUploading(true);
+595:         const formData = new FormData();
+596:         formData.append('image', file);
+597:         formData.append('username', username);
+598:         if (replyingTo) formData.append('reply_to', replyingTo.id);
+599:         if (activeChat.type === 'room') formData.append('room_slug', activeChat.id);
+600:         else if (activeChat.type === 'dm') formData.append('conversation_id', activeChat.id);
+601:         
+602:         const tempId = getTemporaryId();
+603:         setMessages(prev => [...prev, { id: tempId, type: 'system_message', message: `[${file.name}] resmi yükleniyor...` }]);
+604:         
+605:         try {
+606:             const response = await fetch(IMAGE_UPLOAD_URL, { method: 'POST', body: formData });
+607:             
+608:             setMessages(prev => prev.filter(msg => msg.id !== tempId)); 
+609:             
+610:             if (!response.ok) {
+611:                 const errorData = await response.json();
+612:                 alert(`Hata: ${errorData.error || 'Bilinmeyen hata'}`);
+613:             }
+614:         } catch (error) {
+615:             console.error("Resim yükleme hatası:", error);
+616:             alert("Resim yüklenirken bir ağ hatası oluştu.");
+617:         } finally {
+618:             setIsUploading(false);
+619:             if(fileInputRef.current) fileInputRef.current.value = "";
+620:         }
+621:     }, [activeChat, username, isUploading, replyingTo]);
+622: 
+623:     const handleFileInputChange = (event) => {
+624:         const file = event.target.files[0];
+625:         uploadFile(file);
+626:     };
+627:     
+628:     const handleDragEnter = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current++; if (e.dataTransfer.items && e.dataTransfer.items.length > 0) { setIsDragging(true); } };
+629:     const handleDragLeave = (e) => { e.preventDefault(); e.stopPropagation(); dragCounter.current--; if (dragCounter.current === 0) { setIsDragging(false); } };
+630:     const handleDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
+631:     const handleDrop = (e) => {
+632:         e.preventDefault();
+633:         e.stopPropagation();
+634:         setIsDragging(false);
+635:         dragCounter.current = 0;
+636:         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+637:             const file = e.dataTransfer.files[0];
+638:             if (file.type.startsWith('image/')) {
+639:                 uploadFile(file);
+640:             }
+641:             e.dataTransfer.clearData();
+642:         }
+643:     };
+644: 
+645:     const handleToggleReaction = useCallback((messageId, emoji) => {
+646:         if (ws.current?.readyState === WebSocket.OPEN) {
+647:             ws.current.send(JSON.stringify({
+648:                 type: 'toggle_reaction',
+649:                 message_id: messageId,
+650:                 emoji: emoji
+651:             }));
+652:         }
+653:     }, []);
+654: 
+655:     const handleDeleteMessage = useCallback((messageId) => {
+656:         if (window.confirm("Bu mesajı silmek istediğinizden emin misiniz?") && ws.current?.readyState === WebSocket.OPEN) {
+657:             ws.current.send(JSON.stringify({
+658:                 type: 'delete_message',
+659:                 message_id: messageId
+660:             }));
+661:         }
+662:     }, []);
+663: 
+664:     const handleSaveEdit = useCallback((messageId, newContent) => {
+665:         if (ws.current?.readyState === WebSocket.OPEN) {
+666:             ws.current.send(JSON.stringify({
+667:                 type: 'edit_message',
+668:                 message_id: messageId,
+669:                 new_content: newContent
+670:             }));
+671:             setEditingMessage(null);
+672:         }
+673:     }, []);
+674:     
+675:     const currentUserProfile = allUsers.find(u => u.username === username);
+676:     
+677:     const typingMessage = typingUsers.filter(u => u !== username && u).length > 0 ? (
+678:         typingUsers.filter(u => u !== username).length === 1 ?
+679:         `${typingUsers.filter(u => u !== username)[0]} yazıyor...` :
+680:         `${typingUsers.filter(u => u !== username).join(', ')} yazıyor...`
+681:     ) : null;
+682:     
+683:     return (
+684:         <div style={styles.mainContainer}>
+685:             {zoomedImage && <ImageModal imageUrl={zoomedImage} onClose={() => setZoomedImage(null)} />}
+686:             {!isAuthenticated ? (
+687:                 <div style={styles.centeredAuthBox}><div style={styles.authBox}><h2>Sohbete katılmak için adınızı girin</h2><form onSubmit={(e) => { e.preventDefault(); if (username.trim()) { setIsAuthenticated(true); localStorage.setItem('chat_username', username.trim()); }}}><input type="text" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Adınız..." style={{...styles.inputField, width: '100%', marginBottom: '10px'}} required /><button type="submit" style={styles.sendButton} disabled={username.trim() === ''}>Katıl</button></form></div></div>
+688:             ) : (
+689:                 <>
+690:                     {showProfilePanel && (
+691:                         <UserProfilePanel
+692:                             user={currentUserProfile}
+693:                             onClose={() => setShowProfilePanel(false)}
+694:                             onProfileUpdate={handleProfileUpdate}
+695:                             updateProfileUrl={UPDATE_PROFILE_URL}
+696:                             getDeterministicAvatar={getDeterministicAvatar}
+697:                         />
+698:                     )}
+699:                     <div style={styles.chatLayout}>
+700:                         <div style={styles.sidebarWrapper}>
+701:                             <RoomList 
+702:                                 isAdmin={isAdmin} 
+703:                                 roomOptions={roomOptions} 
+704:                                 conversations={conversations} 
+705:                                 currentRoom={activeChat.type === 'room' ? activeChat.id : null} 
+706:                                 currentConversationId={activeChat.type === 'dm' ? activeChat.id : null} 
+707:                                 onRoomSelect={handleRoomChange} 
+708:                                 onDMSelect={handleDMClick} 
+709:                                 isConnected={isConnected} 
+710:                                 unreadCounts={unreadCounts} 
+711:                                 voiceUsers={voiceUsers} 
+712:                                 currentUsername={username} 
+713:                                 currentVoiceRoom={currentVoiceRoom} 
+714:                                 remoteVolumes={remoteVolumes} 
+715:                                 setRemoteVolume={setRemoteVolume} 
+716:                                 joinVoiceChat={(roomSlug) => { if (isInVoiceChat) { setPendingJoinRoom(roomSlug); leaveVoiceChat(); } else { joinVoiceChat(roomSlug); } }} 
+717:                                 leaveVoiceChat={leaveVoiceChat} 
+718:                                 sendRoomManagementSignal={sendRoomManagementSignal}
+719:                                 onlineUsers={onlineUsers}
+720:                                 allUsers={allUsers}
+721:                                 onProfileClick={() => setShowProfilePanel(true)}
+722:                                 getDeterministicAvatar={getDeterministicAvatar}
+723:                             />
+724:                         </div>
+725:                         <div style={styles.mainContent}>
+726:                             <div style={styles.chatArea} onDragEnter={handleDragEnter} onDragLeave={handleDragLeave} onDragOver={handleDragOver} onDrop={handleDrop}>
+727:                                 {isDragging && <div style={styles.dragOverlay}><p>Resmi buraya bırak</p></div>}
+728:                                 <div style={styles.chatHeader}><h1 style={styles.header}>{chatTitle}</h1>{isAdmin && activeChat.type === 'room' && (<button onClick={handleClearChat} style={styles.clearButton} title="Bu odadaki tüm mesajları sil">Chati Temizle</button>)}</div>
+729:                                 <div style={styles.messageBox}>
+730:                                     {messages.map((msg) => (
+731:                                         <div key={msg.id || msg.temp_id} style={styles.chatMessageWrapper}>
+732:                                             <img src={allUsers.find(u => u.username === msg.username)?.avatar || getDeterministicAvatar(msg.username)} style={styles.avatar} alt={`${msg.username} avatar`} />
+733:                                             <div style={{width: '100%'}}>
+734:                                                 {msg.type === 'system_message' ? (
+735:                                                     <p style={styles.systemMessage}>{msg.message}</p>
+736:                                                 ) : editingMessage?.id === msg.id ? (
+737:                                                     <MessageEditForm 
+738:                                                         message={editingMessage}
+739:                                                         onSave={handleSaveEdit}
+740:                                                         onCancel={() => setEditingMessage(null)}
+741:                                                     />
+742:                                                 ) : (
+743:                                                     <Message
+744:                                                         msg={msg}
+745:                                                         currentUser={username}
+746:                                                         onDelete={handleDeleteMessage}
+747:                                                         onStartEdit={setEditingMessage}
+748:                                                         onToggleReaction={handleToggleReaction}
+749:                                                         onSetReply={setReplyingTo}
+750:                                                         onImageClick={setZoomedImage}
+751:                                                     />
+752:                                                 )}
+753:                                             </div>
+754:                                         </div>
+755:                                     ))}
+756:                                     <div ref={messagesEndRef} />
+757:                                 </div>
+758:                                 {typingMessage && ( <p style={styles.typingStatus}>{typingMessage}</p> )}
+759:                                 {isInVoiceChat && (
+760:                                     <div style={styles.voiceControls}><button onClick={toggleMute} style={styles.controlButton}>{isMuted ? 'Sesi Aç' : 'Sesi Kapat'}</button><button onClick={toggleVideo} style={styles.controlButton}>{isVideoEnabled ? 'Kamerayı Kapat' : 'Kamerayı Aç'}</button><button onClick={leaveVoiceChat} style={{...styles.controlButton, backgroundColor: '#d9534f'}}>Görüşmeden Ayrıl</button></div>
+761:                                 )}
+762:                                 <div style={styles.inputContainer}>
+763:                                     <ReplyPreview message={replyingTo} onCancel={() => setReplyingTo(null)} />
+764:                                     {isEmojiPickerOpen && (
+765:                                         <div style={styles.emojiPicker} ref={emojiPickerRef}>
+766:                                             {EMOJI_LIST.map((emoji, index) => (
+767:                                                 <span key={index} style={styles.emojiItem} onClick={() => handleEmojiClick(emoji)}>{emoji}</span>
+768:                                             ))}
+769:                                         </div>
+770:                                     )}
+771:                                     <form onSubmit={sendMessage} style={styles.inputForm}>
+772:                                         <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileInputChange} accept="image/*" />
+773:                                         <button type="button" onClick={() => fileInputRef.current.click()} style={styles.uploadButton} disabled={!isConnected || isUploading}>📎</button>
+774:                                         <button type="button" onClick={() => setIsEmojiPickerOpen(prev => !prev)} style={styles.emojiButton} disabled={!isConnected || isUploading}>😀</button>
+775:                                         <input
+776:                                             type="text"
+777:                                             value={messageInput}
+778:                                             onChange={handleMessageInputChange}
+779:                                             onKeyDown={(e) => {if (e.key === 'Enter') sendMessage(e)}}
+780:                                             placeholder={replyingTo ? `@${replyingTo.username} adlı kişiye yanıt yaz...` : `Mesajınızı buraya yazın...`}
+781:                                             style={styles.inputField}
+782:                                             ref={messageInputRef}
+783:                                         />
+784:                                         <button type="submit" style={styles.sendButton} disabled={!isConnected || isUploading || messageInput.trim() === ''}>
+785:                                             {isUploading ? 'Yükleniyor...' : 'Gönder'}
+786:                                         </button>
+787:                                     </form>
+788:                                 </div>
+789:                                 <p style={styles.status}>Backend Durumu: {isConnected ? 'BAĞLI' : 'BAĞLANTI YOK'}</p>
+790:                             </div>
+791:                             <div style={styles.rightPanel}>
+792:                                 {isInVoiceChat && (
+793:                                     <div style={styles.videoContainer}><h3 style={styles.panelHeader}>GÖRÜNTÜLÜ SOHBET</h3><div style={styles.videoWrapper}><video ref={localVideoRefs} autoPlay muted style={styles.videoElement}></video><div style={styles.videoLabel}>{username} (Siz)</div></div>{voiceUsers[currentVoiceRoom]?.filter(u => u !== username).map(user => (<div key={user} style={styles.videoWrapper}><video ref={el => remoteVideoRefs.current[user] = el} autoPlay style={styles.videoElement}></video><div style={styles.videoLabel}>{user}</div></div>))}</div>
+794:                                 )}
+795:                                 <ChatUserList 
+796:                                     chatUsers={chatUsers} 
+797:                                     onUserClick={handleDMClick} 
+798:                                     currentUser={username} 
+799:                                     onlineUsers={onlineUsers} 
+800:                                     allUsers={allUsers} 
+801:                                     hasFetchedAllUsers={hasFetchedAllUsers} 
+802:                                     getDeterministicAvatar={getDeterministicAvatar}
+803:                                 />
+804:                             </div>
+805:                         </div>
+806:                     </div>
+807:                 </>
+808:             )}
+809:         </div>
+810:     );
+811: }
+812: 
+813: const styles = {
+814:     mainContainer: { display: 'flex', height: '100vh', backgroundColor: '#36393f', width: '100%', overflowX: 'auto' },
+815:     centeredAuthBox: { display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', height: '100vh' },
+816:     chatLayout: { display: 'flex', width: '100%', height: '100vh' },
+817:     sidebarWrapper: { position: 'relative', width: '250px', minWidth: '250px', backgroundColor: '#2f3136', height: '100%', display: 'flex', flexDirection: 'column' },
+818:     mainContent: { display: 'flex', flex: 1, height: '100%', minWidth: 0 },
+819:     chatArea: { position: 'relative', flexGrow: 1, display: 'flex', flexDirection: 'column', padding: '0 20px 20px 20px', backgroundColor: '#36393f', color: '#fff', height: '100%', boxSizing: 'border-box' },
+820:     dragOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(88, 101, 242, 0.7)', border: '3px dashed white', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5em', fontWeight: 'bold', zIndex: 10 },
+821:     rightPanel: { width: '300px', minWidth: '300px', backgroundColor: '#2f3136', color: '#fff', padding: '20px 10px', borderLeft: '1px solid #444', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' },
+822:     panelHeader: { paddingBottom: '10px', borderBottom: '1px solid #444', marginBottom: '10px', color: '#99aab5', fontSize: '1em', fontWeight: 'bold', textTransform: 'uppercase', marginTop: 0 },
+823:     chatHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #444', marginBottom: '10px'},
+824:     header: { padding: '20px 0 10px 0', border: 'none', margin: 0, color: '#fff', fontSize: '1.4em' },
+825:     messageBox: { flexGrow: 1, overflowY: 'auto', paddingRight: '10px', marginBottom: '15px' },
+826:     chatMessageWrapper: { display: 'flex', alignItems: 'flex-start', marginBottom: '2px' },
+827:     avatar: { width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px', marginTop: '5px', flexShrink: 0, objectFit: 'cover' },
+828:     systemMessage: { width: '100%', padding: '5px 0', color: '#949ba4', fontStyle: 'italic', textAlign: 'center', fontSize: '0.9em' },
+829:     inputContainer: { position: 'relative', width: '100%', zIndex: 10 },
+830:     inputForm: { display: 'flex' },
+831:     emojiPicker: { position: 'absolute', bottom: '50px', left: '50px', backgroundColor: '#2f3136', border: '1px solid #5865f2', borderRadius: '8px', padding: '10px', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '5px', zIndex: 20, boxShadow: '0 5px 15px rgba(0,0,0,0.5)' },
+832:     emojiItem: { cursor: 'pointer', fontSize: '1.5em', padding: '5px', transition: 'background-color 0.1s', borderRadius: '4px', textAlign: 'center' },
+833:     emojiButton: { padding: '10px 15px', backgroundColor: '#7289da', color: 'white', border: 'none', cursor: 'pointer', fontSize: '1.2em', order: 2, borderRadius: '0' },
+834:     uploadButton: { padding: '10px 15px', backgroundColor: '#7289da', color: 'white', border: 'none', borderRadius: '4px 0 0 4px', cursor: 'pointer', fontSize: '1.2em', order: 1 },
+835:     inputField: { flexGrow: 1, padding: '10px', border: '1px solid #555', borderLeft: 'none', borderRight: 'none', fontSize: '16px', backgroundColor: '#444', color: 'white', order: 3, outline: 'none' },
+836:     sendButton: { padding: '10px 20px', backgroundColor: '#5865f2', color: 'white', border: 'none', borderRadius: '0 4px 4px 0', cursor: 'pointer', order: 4 },
+837:     status: { textAlign: 'center', marginTop: '10px', color: '#5865f2' },
+838:     authBox: { padding: '20px', border: '1px solid #5865f2', textAlign: 'center', backgroundColor: '#2f3136', color: 'white', borderRadius: '8px', boxShadow: '0 5px 15px rgba(0,0,0,0.5)' },
+839:     typingStatus: { textAlign: 'left', height: '25px', marginTop: '5px', marginBottom: '5px', color: '#7289da', fontSize: '0.9em', fontWeight: 'bold' },
+840:     clearButton: { backgroundColor: '#d9534f', color: 'white', border: 'none', borderRadius: '5px', padding: '5px 10px', cursor: 'pointer', fontWeight: 'bold', marginRight: '10px', height: 'fit-content' },
+841:     videoContainer: { display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' },
+842:     videoWrapper: { position: 'relative', width: '100%', paddingTop: '75%', backgroundColor: '#202225', borderRadius: '5px', overflow: 'hidden' },
+843:     videoElement: { position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' },
+844:     videoLabel: { position: 'absolute', bottom: '5px', left: '5px', color: 'white', backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: '2px 5px', borderRadius: '3px', fontSize: '0.8em' },
+845:     voiceControls: { display: 'flex', justifyContent: 'center', gap: '10px', padding: '10px 0', marginBottom: '10px' },
+846:     controlButton: { padding: '8px 15px', backgroundColor: '#5865f2', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }
+847: };
+848: 
+849: export default App;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\APP.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\INDEX.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/index.js
+002: 
+003: import React from 'react';
+004: import ReactDOM from 'react-dom/client';
+005: import './index.css';
+006: import App from './App';
+007: import reportWebVitals from './reportWebVitals';
+008: 
+009: const root = ReactDOM.createRoot(document.getElementById('root'));
+010: root.render(
+011:   <React.StrictMode>
+012:     <App />
+013:   </React.StrictMode>
+014: );
+015: 
+016: reportWebVitals();
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\INDEX.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\ROOMLIST.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/RoomList.js (BİLDİRİM DAİRESİ YENİ STİLİYLE)
+002: 
+003: import React, { useState, useMemo } from 'react';
+004: import VoiceUserList from './VoiceUserList';
+005: 
+006: const RoomList = ({
+007:     isAdmin, roomOptions, conversations, currentRoom, currentConversationId,
+008:     onRoomSelect, onDMSelect, isConnected, isInVoiceChat, joinVoiceChat, leaveVoiceChat,
+009:     unreadCounts, voiceUsers, currentUsername, currentVoiceRoom, remoteVolumes,
+010:     setRemoteVolume, sendRoomManagementSignal, onlineUsers, allUsers, onProfileClick,
+011:     getDeterministicAvatar
+012: }) => {
+013:     
+014:     const [newRoomName, setNewRoomName] = useState(''); 
+015:     const [channelType, setChannelType] = useState('text'); 
+016:     const [hoveredRoom, setHoveredRoom] = useState(null); 
+017:     
+018:     const activeVoiceUsers = voiceUsers && typeof voiceUsers === 'object' ? voiceUsers : {};
+019: 
+020:     const { textRooms, voiceRooms } = useMemo(() => {
+021:         if (!roomOptions) return { textRooms: [], voiceRooms: [] };
+022:         const tr = roomOptions.filter(room => room.channel_type === 'text').map(room => room.slug);
+023:         const vr = roomOptions.filter(room => room.channel_type === 'voice').map(room => room.slug);
+024:         return { textRooms: tr, voiceRooms: vr };
+025:     }, [roomOptions]);
+026: 
+027:     const isUserOnline = (username) => Array.isArray(onlineUsers) && onlineUsers.includes(username);
+028: 
+029:     const handleTextRoomChange = (newRoomSlug) => { onRoomSelect(newRoomSlug); };
+030:     
+031:     const handleVoiceToggle = (roomSlug) => {
+032:         if (isInVoiceChat && roomSlug === currentVoiceRoom) leaveVoiceChat();
+033:         else if (isConnected) joinVoiceChat(roomSlug);
+034:     };
+035:     
+036:     const handleAddRoom = (e) => {
+037:         e.preventDefault();
+038:         const slug = newRoomName.toLowerCase().trim().replace(/[^a-z0-9-_]/g, ''); 
+039:         const existingSlugs = roomOptions.map(r => r.slug);
+040:         if (slug && slug !== 'genel' && !existingSlugs.includes(slug)) {
+041:             sendRoomManagementSignal('add_room', slug, channelType); 
+042:             setNewRoomName(''); 
+043:             setChannelType('text'); 
+044:         } else {
+045:             alert(slug ? "Bu oda zaten var, 'genel' kanalı eklenemez veya oda adı geçersiz." : "Oda adı boş olamaz.");
+046:         }
+047:     };
+048:     
+049:     const handleRemoveRoom = (roomSlug) => {
+050:         if (roomSlug === 'genel') { alert("Ana 'genel' kanalı silinemez!"); return; }
+051:         if (window.confirm(`${roomSlug.toUpperCase()} kanalını silmek istediğinizden emin misiniz?`)) {
+052:             sendRoomManagementSignal('remove_room', roomSlug); 
+053:         }
+054:     };
+055:     
+056:     const handleDMItemClick = (conversation) => {
+057:         const otherUser = conversation.participants.find(p => p.username !== currentUsername);
+058:         if (otherUser) onDMSelect(otherUser.username);
+059:     };
+060: 
+061:     return (
+062:         <div style={styles.sidebar}>
+063:             <div style={styles.topSection}>
+064:                 <h3 style={styles.groupSubHeader}>ÖZEL MESAJLAR</h3>
+065:                 {conversations && conversations.map((conv) => {
+066:                     const otherUser = conv.participants.find(p => p.username !== currentUsername);
+067:                     if (!otherUser) return null;
+068:                     
+069:                     const targetUsername = otherUser.username;
+070:                     const avatarUrl = otherUser.avatar || getDeterministicAvatar(targetUsername);
+071:                     const isActive = currentConversationId === conv.id;
+072:                     const unread = unreadCounts[`dm-${conv.id}`] || 0; 
+073:                     const isOnline = isUserOnline(targetUsername); 
+074:                     
+075:                     return (
+076:                         <div 
+077:                             key={`dm-${conv.id}`} 
+078:                             style={{...styles.dmItem, backgroundColor: isActive ? '#444754' : 'transparent'}}
+079:                             onClick={() => handleDMItemClick(conv)}
+080:                             onMouseEnter={() => setHoveredRoom(`dm-${conv.id}`)}
+081:                             onMouseLeave={() => setHoveredRoom(null)}
+082:                         >
+083:                             <div style={styles.dmContentWrapper}>
+084:                                 <div style={styles.avatarWrapper}>
+085:                                     <img src={avatarUrl} style={styles.avatarSmall} alt={`${targetUsername} avatar`} />
+086:                                     <span style={{...styles.onlineIndicator, backgroundColor: isOnline ? '#43b581' : '#747f8d'}}></span>
+087:                                 </div>
+088:                                 <span style={{...styles.dmNameText, fontWeight: unread > 0 && !isActive ? 'bold' : 'normal'}}>@ {targetUsername}</span>
+089:                             </div>
+090:                             {unread > 0 && !isActive && (<span style={styles.unreadBadgeDM}>{unread > 9 ? '9+' : unread}</span>)}
+091:                         </div>
+092:                     );
+093:                 })}
+094: 
+095:                 <h3 style={styles.groupHeader}>KANALLAR
+096:                     {isAdmin && ( <button style={styles.addButton} onClick={() => setNewRoomName(prev => (prev !== '' ? '' : 'TEMP'))} title="Yeni Kanal Ekle">+</button> )}
+097:                 </h3>
+098:                 {isAdmin && newRoomName !== '' && ( 
+099:                     <form onSubmit={handleAddRoom} style={styles.addRoomForm}>
+100:                         <input type="text" value={newRoomName === 'TEMP' ? '' : newRoomName} onChange={(e) => setNewRoomName(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))} placeholder="Kanal adı..." style={styles.addRoomInput} autoFocus required />
+101:                         <div style={styles.addRoomControls}>
+102:                             <select value={channelType} onChange={(e) => setChannelType(e.target.value)} style={styles.channelTypeSelect}>
+103:                                 <option value="text"># Metin</option>
+104:                                 <option value="voice">🔊 Sesli</option>
+105:                             </select>
+106:                             <button type="submit" style={styles.addRoomButton} disabled={!isConnected || newRoomName.trim() === ''}>Ekle</button>
+107:                         </div>
+108:                     </form> 
+109:                 )}
+110:                 
+111:                 <h3 style={styles.groupSubHeader}># METİN KANALLARI</h3>
+112:                 {textRooms.map((room) => { 
+113:                     const isCurrent = room === currentRoom;
+114:                     const unread = unreadCounts[`room-${room}`] || 0; 
+115:                     const isHovered = hoveredRoom === room;
+116:                     const hasUnreadAndNotCurrent = unread > 0 && !isCurrent;
+117:                     
+118:                     const roomItemStyle = { ...styles.roomItem, backgroundColor: isCurrent ? '#444754' : (isHovered ? '#3a3d43' : 'transparent'), fontWeight: hasUnreadAndNotCurrent ? 'bold' : 'normal', paddingRight: isAdmin || hasUnreadAndNotCurrent ? '50px' : '15px' };
+119:                     
+120:                     return (
+121:                         <div key={room} style={roomItemStyle} onClick={() => handleTextRoomChange(room)} onMouseEnter={() => setHoveredRoom(room)} onMouseLeave={() => setHoveredRoom(null)}>
+122:                             <div style={styles.roomContentWrapper}> 
+123:                                 <span style={styles.roomNameText}># {room.toUpperCase()}</span>
+124:                             </div>
+125:                             
+126:                             {isAdmin && room !== 'genel' && ( 
+127:                                 <button style={{...styles.removeButtonIntegrated, opacity: (isHovered || isCurrent) ? 1 : 0}} onClick={(e) => { e.stopPropagation(); handleRemoveRoom(room); }} title="Kanalı Sil" disabled={!isConnected}>x</button> 
+128:                             )}
+129:                             {hasUnreadAndNotCurrent && (<span style={styles.unreadBadge}>{unread > 99 ? '99+' : unread}</span>)}
+130:                         </div>
+131:                     );
+132:                 })}
+133: 
+134:                 <h3 style={{...styles.groupSubHeader, marginTop: '20px'}}>🔊 SESLİ KANALLAR</h3>
+135:                 {voiceRooms.map((room) => { 
+136:                     const isCurrentVoice = currentVoiceRoom === room;
+137:                     const usersInRoom = activeVoiceUsers[room] || [];
+138:                     const isHovered = hoveredRoom === room;
+139: 
+140:                     return (
+141:                         <div key={`voice-${room}`} style={styles.voiceRoomContainer} onMouseEnter={() => setHoveredRoom(room)} onMouseLeave={() => setHoveredRoom(null)}>
+142:                             <div style={styles.voiceRoomHeader}>
+143:                                 <button style={{ ...styles.voiceToggleButton, backgroundColor: isCurrentVoice ? '#fa4e4e' : '#5865f2' }} onClick={() => handleVoiceToggle(room)} disabled={!isConnected} title={isCurrentVoice ? 'Sesli kanaldan ayrıl' : 'Sesli kanala katıl'}>
+144:                                     🔊 {room.toUpperCase()} {usersInRoom.length > 0 && ` (${usersInRoom.length})`}
+145:                                 </button>
+146:                                 {isAdmin && room !== 'genel' && ( 
+147:                                     <button style={{...styles.removeButtonVoice, opacity: (isHovered && !isCurrentVoice) ? 1 : 0}} onClick={() => handleRemoveRoom(room)} title="Kanalı Sil" disabled={!isConnected || isCurrentVoice}>x</button> 
+148:                                 )}
+149:                             </div>
+150:                             {usersInRoom.length > 0 && (
+151:                                 <div style={styles.voiceUserListWrapper}>
+152:                                     <VoiceUserList voiceUsers={activeVoiceUsers} roomName={room} currentUsername={currentUsername} isClientInThisChannel={isCurrentVoice} remoteVolumes={remoteVolumes} setRemoteVolume={setRemoteVolume} />
+153:                                 </div>
+154:                             )}
+155:                         </div>
+156:                     );
+157:                 })}
+158:             </div>
+159: 
+160:             <div style={styles.bottomSection}>
+161:                 <div style={styles.userPanel} onClick={onProfileClick} title="Profili Düzenle">
+162:                     <img 
+163:                         src={allUsers.find(u => u.username === currentUsername)?.avatar || getDeterministicAvatar(currentUsername)} 
+164:                         style={styles.avatar} 
+165:                         alt="kullanıcı avatarı" 
+166:                     />
+167:                     <div style={styles.userInfo}>
+168:                         <span style={styles.usernameText}>{currentUsername}</span>
+169:                         <span style={styles.statusText}>
+170:                             {allUsers.find(u => u.username === currentUsername)?.status_message || 'Durum belirtilmemiş'}
+171:                         </span>
+172:                     </div>
+173:                 </div>
+174:             </div>
+175:         </div>
+176:     );
+177: };
+178: 
+179: // <<< YENİ STİL TANIMLAMASI: Ortak, dairesel bildirim stili >>>
+180: const unreadBadgeBase = {
+181:     backgroundColor: '#f84848',
+182:     color: 'white',
+183:     width: '18px',
+184:     height: '18px',
+185:     borderRadius: '50%',
+186:     display: 'flex',
+187:     alignItems: 'center',
+188:     justifyContent: 'center',
+189:     fontSize: '11px',
+190:     fontWeight: 'bold',
+191:     position: 'absolute',
+192:     top: '50%',
+193:     transform: 'translateY(-50%)',
+194:     zIndex: 10,
+195:     userSelect: 'none',
+196: };
+197: 
+198: const styles = {
+199:     sidebar: { width: '250px', minHeight: '100vh', backgroundColor: '#2f3136', color: 'white', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '2px 0 5px rgba(0,0,0,0.2)' },
+200:     topSection: { flexGrow: 1, overflowY: 'auto', paddingTop: '10px' },
+201:     groupHeader: { padding: '5px 15px', fontSize: '1.2em', color: '#fff', marginBottom: '10px', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #444' },
+202:     groupSubHeader: { padding: '5px 15px', fontSize: '1em', color: '#99aab5', marginBottom: '10px', fontWeight: 'bold', textTransform: 'uppercase' },
+203:     dmItem: { padding: '8px 15px', margin: '2px 10px', borderRadius: '4px', color: '#ccc', cursor: 'pointer', transition: 'background-color 0.15s', userSelect: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 },
+204:     dmContentWrapper: { display: 'flex', alignItems: 'center', flexGrow: 1, minWidth: 0, paddingRight: '10px' },
+205:     avatarWrapper: { position: 'relative', marginRight: '10px', flexShrink: 0 },
+206:     avatarSmall: { width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' },
+207:     onlineIndicator: { width: '10px', height: '10px', borderRadius: '50%', border: '2px solid #2f3136', position: 'absolute', bottom: -2, right: -2 },
+208:     dmNameText: { flexGrow: 1, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+209:     // <<< DEĞİŞİKLİK: Yeni stil burada kullanılıyor >>>
+210:     unreadBadgeDM: {
+211:         ...unreadBadgeBase,
+212:         // Konumu sağdan 15px olarak ayarla
+213:         right: '18px', 
+214:         // Dikey hizalamayı sağlamak için 'top' ve 'transform' satırları
+215:         // unreadBadgeBase'den zaten geliyor ve doğru. Ekstra bir ayara gerek yok.
+216:     },
+217:     roomItem: { padding: '8px 15px', transition: 'background-color 0.15s, color 0.15s', userSelect: 'none', borderRadius: '4px', margin: '2px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2, cursor: 'pointer' },
+218:     roomContentWrapper: { display: 'flex', flexGrow: 1, alignItems: 'center', minWidth: 0, position: 'relative', zIndex: 1, justifyContent: 'space-between' },
+219:     roomNameText: { flexShrink: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', position: 'relative', zIndex: 1 },
+220:     // <<< DEĞİŞİKLİK: Yeni stil burada kullanılıyor >>>
+221:     unreadBadge: {
+222:         ...unreadBadgeBase,
+223:         right: '35px',
+224:     },
+225:     voiceUserListWrapper: { padding: '0 15px 5px 15px' },
+226:     voiceRoomContainer: { padding: '0', marginBottom: '5px' },
+227:     voiceRoomHeader: { marginBottom: '0', padding: '0 15px', display: 'flex', alignItems: 'center', position: 'relative' },
+228:     voiceToggleButton: { width: '100%', padding: '5px 15px', border: 'none', borderRadius: '5px', color: 'white', fontWeight: 'bold', textAlign: 'left', cursor: 'pointer', transition: 'background-color 0.2s', marginBottom: '5px', paddingRight: '40px' },
+229:     removeButtonIntegrated: { backgroundColor: '#f04747', color: 'white', border: 'none', borderRadius: '3px', width: '16px', height: '16px', fontSize: '0.7em', cursor: 'pointer', padding: '0', lineHeight: '14px', fontWeight: 'bold', transition: 'opacity 0.2s, background-color 0.2s', opacity: 0, position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', zIndex: 3 },
+230:     removeButtonVoice: { backgroundColor: '#f04747', color: 'white', border: 'none', borderRadius: '4px', width: '20px', height: '20px', fontSize: '0.8em', cursor: 'pointer', marginLeft: '10px', padding: '0', lineHeight: '18px', position: 'absolute', right: '15px', top: '5px', fontWeight: 'bold', transition: 'opacity 0.2s', opacity: 0, zIndex: 2 },
+231:     addButton: { backgroundColor: '#43b581', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', fontSize: '1.2em', cursor: 'pointer', lineHeight: '20px', padding: '0' },
+232:     addRoomForm: { display: 'flex', flexDirection: 'column', padding: '0 15px 10px 15px' },
+233:     addRoomInput: { width: '100%', padding: '8px', border: '1px solid #555', borderRadius: '4px', backgroundColor: '#444', color: 'white', fontSize: '0.9em', outline: 'none', marginBottom: '5px', boxSizing: 'border-box', maxWidth: '100%' },
+234:     addRoomControls: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' },
+235:     channelTypeSelect: { padding: '5px', border: '1px solid #555', borderRadius: '4px', backgroundColor: '#444', color: 'white', fontSize: '0.9em', flexGrow: 1, marginRight: '10px', outline: 'none', height: '30px', boxSizing: 'border-box', minWidth: '100px' },
+236:     addRoomButton: { padding: '5px 10px', backgroundColor: '#5865f2', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', height: '30px' },
+237:     bottomSection: { padding: '10px', backgroundColor: '#292b2f', borderTop: '1px solid #444' },
+238:     userPanel: { display: 'flex', alignItems: 'center', padding: '8px', borderRadius: '5px', cursor: 'pointer', transition: 'background-color 0.2s' },
+239:     avatar: { width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px', objectFit: 'cover' },
+240:     userInfo: { display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+241:     usernameText: { fontWeight: 'bold', color: 'white' },
+242:     statusText: { fontSize: '0.8em', color: '#b9bbbe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' },
+243: };
+244: 
+245: export default RoomList;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\ROOMLIST.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\CHATUSERLIST.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/ChatUserList.js (TAM KOD)
+002: 
+003: import React, { useMemo } from 'react';
+004: 
+005: const ChatUserList = ({ 
+006:     chatUsers, onUserClick, currentUser, onlineUsers, allUsers, 
+007:     hasFetchedAllUsers, activeChannelName, getDeterministicAvatar
+008: }) => {
+009: 
+010:     const isUserInChat = (username) => chatUsers && chatUsers.includes(username);
+011:     const chatLabel = activeChannelName ? activeChannelName.toUpperCase() : 'CHAT';
+012: 
+013:     const { onlineUsersList, offlineUsersList } = useMemo(() => {
+014:         const currentOnlineUsers = Array.isArray(onlineUsers) ? onlineUsers : [];
+015:         const allUniqueUsernames = new Set([
+016:             ...(Array.isArray(allUsers) ? allUsers.map(u => u.username) : []), 
+017:             ...currentOnlineUsers,
+018:             currentUser
+019:         ]);
+020:         
+021:         const online = [];
+022:         const offline = [];
+023: 
+024:         allUniqueUsernames.forEach(username => {
+025:             if (!username) return;
+026:             if (currentOnlineUsers.includes(username)) {
+027:                 if (!online.includes(username)) online.push(username);
+028:             } else {
+029:                 if (!offline.includes(username)) offline.push(username);
+030:             }
+031:         });
+032: 
+033:         online.sort((a, b) => {
+034:             if (a === currentUser) return -1;
+035:             if (b === currentUser) return 1;
+036:             return a.localeCompare(b);
+037:         });
+038:         offline.sort((a, b) => a.localeCompare(b));
+039:         return { onlineUsersList: online, offlineUsersList: offline };
+040:     }, [allUsers, onlineUsers, currentUser]);
+041: 
+042:     const renderUserSection = (title, userList, isOnlineSection) => {
+043:         const displayCount = isOnlineSection 
+044:             ? userList.filter(u => u !== currentUser).length 
+045:             : userList.length;
+046: 
+047:         let emptyMessage = "";
+048:         if (!hasFetchedAllUsers && isOnlineSection) {
+049:             emptyMessage = "Kullanıcı listesi yükleniyor...";
+050:         } else if (userList.length === 0) {
+051:             emptyMessage = isOnlineSection ? "Kimse online değil." : "Çevrimdışı kullanıcı yok.";
+052:         } else if (isOnlineSection && userList.length === 1 && userList[0] === currentUser) {
+053:             emptyMessage = "Sizden başka online olan kimse yok.";
+054:         }
+055: 
+056:         return (
+057:             <div style={styles.sectionContainer}>
+058:                 <h3 style={styles.header}>{title} ({displayCount < 0 ? 0 : displayCount})</h3>
+059:                 {emptyMessage ? (
+060:                     <p style={styles.noUserText}>{emptyMessage}</p>
+061:                 ) : (
+062:                     <ul style={styles.userList}>
+063:                         {userList.map(username => {
+064:                             const userProfile = allUsers.find(u => u.username === username);
+065:                             const avatarUrl = userProfile?.avatar || getDeterministicAvatar(username);
+066:                             const statusMessage = userProfile?.status_message;
+067: 
+068:                             return (
+069:                                 <li 
+070:                                     key={username} 
+071:                                     style={{ ...styles.userItem, cursor: username !== currentUser ? 'pointer' : 'default' }}
+072:                                     onClick={() => username !== currentUser && onUserClick(username)}
+073:                                     title={username !== currentUser ? `${username} ile özel mesaj başlat` : ''}
+074:                                 >
+075:                                     <div style={styles.avatarWrapper}>
+076:                                         <img src={avatarUrl} style={styles.avatar} alt={`${username} avatar`} />
+077:                                         <span style={{...styles.onlineIndicator, backgroundColor: isOnlineSection ? '#43b581' : 'transparent'}}></span>
+078:                                     </div>
+079:                                     <div style={styles.userInfo}>
+080:                                         <span style={{opacity: isOnlineSection ? 1 : 0.7}}>
+081:                                             {username} {username === currentUser ? '(Siz)' : ''}
+082:                                         </span>
+083:                                         {statusMessage && (
+084:                                             <span style={styles.statusText}>{statusMessage}</span>
+085:                                         )}
+086:                                     </div>
+087:                                 </li>
+088:                             );
+089:                         })}
+090:                     </ul>
+091:                 )}
+092:             </div>
+093:         );
+094:     };
+095: 
+096:     return (
+097:         <div style={styles.container}>
+098:             {renderUserSection("Online", onlineUsersList, true)}
+099:             {renderUserSection("Offline", offlineUsersList, false)}
+100:         </div>
+101:     );
+102: };
+103: 
+104: const styles = {
+105:     container: { width: '100%', display: 'flex', flexDirection: 'column', flexGrow: 1, },
+106:     sectionContainer: { marginBottom: '20px' },
+107:     header: { paddingBottom: '10px', borderBottom: '1px solid #444', marginBottom: '10px', color: '#99aab5', fontSize: '1em', fontWeight: 'bold', textTransform: 'uppercase', marginTop: 0 },
+108:     userList: { listStyle: 'none', padding: 0, margin: 0 },
+109:     userItem: { padding: '5px 0', transition: 'background-color 0.2s', display: 'flex', alignItems: 'center', borderRadius: '4px' },
+110:     avatarWrapper: { position: 'relative', marginRight: '10px', flexShrink: 0 },
+111:     avatar: { width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' },
+112:     onlineIndicator: { width: '10px', height: '10px', borderRadius: '50%', border: '2px solid #2f3136', position: 'absolute', bottom: -2, right: -2 },
+113:     userInfo: { display: 'flex', flexDirection: 'column', overflow: 'hidden', color: '#dcddde' },
+114:     statusText: { fontSize: '0.75em', color: '#b9bbbe', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+115:     noUserText: { color: '#99aab5', fontStyle: 'italic' }
+116: };
+117: 
+118: export default ChatUserList;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\CHATUSERLIST.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\VOICEUSERLIST.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/VoiceUserList.js
+002: 
+003: import React from 'react';
+004: 
+005: const VoiceUserList = ({ voiceUsers, roomName, currentUsername, remoteVolumes, setRemoteVolume, isClientInThisChannel }) => {
+006: 
+007:     if (!voiceUsers || typeof voiceUsers !== 'object' || Array.isArray(voiceUsers)) {
+008:         return null;
+009:     }
+010: 
+011:     const usersInRoom = voiceUsers[roomName] || [];
+012: 
+013:     if (!Array.isArray(usersInRoom) || usersInRoom.length === 0) {
+014:         return null;
+015:     }
+016: 
+017:     const handleVolumeChange = (user, event) => {
+018:         const volume = event.target.value;
+019:         setRemoteVolume(user, parseInt(volume, 10));
+020:     };
+021: 
+022:     return (
+023:         <div style={styles.container}>
+024:             <h4 style={styles.header}>Aktif Kullanıcılar ({usersInRoom.length})</h4>
+025:             <div style={styles.userList}>
+026:                 {usersInRoom.map((user) => {
+027:                     if (user === currentUsername) {
+028:                         return (
+029:                             <div key={user} style={styles.userItem}>
+030:                                 <span style={styles.selfUser}>🎤 {user} (Sen)</span>
+031:                             </div>
+032:                         );
+033:                     }
+034:                     
+035:                     const currentVolume = remoteVolumes[user] || 100;
+036: 
+037:                     if (!isClientInThisChannel) {
+038:                         return (
+039:                             <div key={user} style={styles.userItem}>
+040:                                 <div style={styles.userDisplay}>
+041:                                     <span>🔊 {user}</span>
+042:                                 </div>
+043:                             </div>
+044:                         );
+045:                     }
+046: 
+047:                     return (
+048:                         <div key={user} style={styles.userItem}>
+049:                             <div style={styles.userDisplay}>
+050:                                 <span>🔊 {user}</span>
+051:                             </div>
+052:                             
+053:                             <div style={styles.volumeControl}>
+054:                                 <input
+055:                                     type="range"
+056:                                     min="0"
+057:                                     max="100"
+058:                                     value={currentVolume}
+059:                                     onChange={(e) => handleVolumeChange(user, e)}
+060:                                     style={styles.volumeSlider}
+061:                                 />
+062:                                 <span style={styles.volumeText}>{currentVolume}%</span>
+063:                             </div>
+064:                         </div>
+065:                     );
+066:                 })}
+067:             </div>
+068:         </div>
+069:     );
+070: };
+071: 
+072: const styles = {
+073:     container: { width: '100%', backgroundColor: 'transparent', color: '#ccc', padding: '0' },
+074:     header: { fontSize: '0.8em', padding: '3px 0 0 0', marginBottom: '2px', color: '#99aab5', textTransform: 'uppercase' },
+075:     userList: { padding: '0' },
+076:     userItem: { padding: '3px 0', fontSize: '0.9em', borderBottom: '1px solid #3d3f44', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' },
+077:     userDisplay: { marginBottom: '3px' },
+078:     selfUser: { color: '#4CAF50', fontWeight: 'bold' },
+079:     volumeControl: { display: 'flex', alignItems: 'center', width: '100%' },
+080:     volumeSlider: { flexGrow: 1, marginRight: '5px', height: '4px', cursor: 'pointer' },
+081:     volumeText: { fontSize: '0.75em', minWidth: '35px', textAlign: 'right', color: '#99aab5' }
+082: };
+083: export default VoiceUserList;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\VOICEUSERLIST.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\IMAGEMODAL.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/ImageModal.js
+002: 
+003: import React, { useEffect } from 'react';
+004: 
+005: const ImageModal = ({ imageUrl, onClose }) => {
+006:     useEffect(() => {
+007:         const handleKeyDown = (e) => {
+008:             if (e.key === 'Escape') {
+009:                 onClose();
+010:             }
+011:         };
+012:         window.addEventListener('keydown', handleKeyDown);
+013:         return () => {
+014:             window.removeEventListener('keydown', handleKeyDown);
+015:         };
+016:     }, [onClose]);
+017: 
+018:     return (
+019:         <div style={styles.overlay} onClick={onClose}>
+020:             <img src={imageUrl} style={styles.image} alt="Büyütülmüş Resim" />
+021:         </div>
+022:     );
+023: };
+024: 
+025: const styles = {
+026:     overlay: {
+027:         position: 'fixed',
+028:         top: 0,
+029:         left: 0,
+030:         right: 0,
+031:         bottom: 0,
+032:         backgroundColor: 'rgba(0, 0, 0, 0.8)',
+033:         display: 'flex',
+034:         alignItems: 'center',
+035:         justifyContent: 'center',
+036:         zIndex: 2000,
+037:         cursor: 'pointer',
+038:     },
+039:     image: {
+040:         maxWidth: '90vw',
+041:         maxHeight: '90vh',
+042:         objectFit: 'contain',
+043:         boxShadow: '0 0 30px rgba(0,0,0,0.5)',
+044:     },
+045: };
+046: 
+047: export default ImageModal;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\IMAGEMODAL.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\MESSAGE.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/Message.js (REAKSİYON SEÇİCİ EKLENDİ)
+002: 
+003: import React, { useState, useMemo } from 'react';
+004: import ReactionPicker from './ReactionPicker';
+005: 
+006: const formatTimestamp = (timestamp) => {
+007:     const messageDate = new Date(timestamp);
+008:     const now = new Date();
+009:     const isToday = messageDate.toDateString() === now.toDateString();
+010:     if (isToday) {
+011:         return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+012:     } else {
+013:         return messageDate.toLocaleString([], { hour: '2-digit', minute: '2-digit' });
+014:     }
+015: };
+016: 
+017: const Message = ({ msg, currentUser, onDelete, onStartEdit, onToggleReaction, onSetReply, onImageClick }) => {
+018:     const [isHovered, setIsHovered] = useState(false);
+019:     const [showReactionPicker, setShowReactionPicker] = useState(false);
+020:     const isMyMessage = msg.username === currentUser;
+021: 
+022:     const groupedReactions = useMemo(() => {
+023:         if (!msg.reactions) return [];
+024:         const groups = {};
+025:         msg.reactions.forEach(reaction => {
+026:             if (!groups[reaction.emoji]) {
+027:                 groups[reaction.emoji] = [];
+028:             }
+029:             groups[reaction.emoji].push(reaction.username);
+030:         });
+031:         return Object.entries(groups).map(([emoji, users]) => ({ emoji, users, count: users.length }));
+032:     }, [msg.reactions]);
+033: 
+034:     if (!msg) {
+035:         return null;
+036:     }
+037: 
+038:     const myReaction = (emoji) => msg.reactions?.some(r => r.username === currentUser && r.emoji === emoji);
+039: 
+040:     const handleMouseLeave = () => {
+041:         setIsHovered(false);
+042:         setShowReactionPicker(false);
+043:     };
+044: 
+045:     return (
+046:         <div 
+047:             style={{...styles.chatMessage, backgroundColor: isHovered ? '#32353b' : 'transparent'}}
+048:             onMouseEnter={() => setIsHovered(true)}
+049:             onMouseLeave={handleMouseLeave}
+050:         >
+051:             {msg.reply_to && (
+052:                 <div style={styles.replyContainer}>
+053:                     <div style={styles.replyLine}></div>
+054:                     <span style={styles.replyUsername}>@{msg.reply_to.username}</span>
+055:                     <span style={styles.replyContent}>{msg.reply_to.content}</span>
+056:                 </div>
+057:             )}
+058: 
+059:             <div style={styles.messageHeader}>
+060:                 <strong>{msg.username}</strong>
+061:                 <span style={styles.timestamp}>
+062:                     ({msg.timestamp ? formatTimestamp(msg.timestamp) : 'Şimdi'})
+063:                     {msg.is_edited && <span style={styles.editedText}> (düzenlendi)</span>}
+064:                 </span>
+065:             </div>
+066:             
+067:             {(msg.content) && <p style={styles.messageContent}>{msg.content}</p>}
+068:             {msg.image_url && <img src={msg.image_url} alt="Yüklenen Resim" style={styles.messageImage} onClick={() => onImageClick(msg.image_url)} />}
+069: 
+070:             {groupedReactions.length > 0 && (
+071:                 <div style={styles.reactionsContainer}>
+072:                     {groupedReactions.map(({ emoji, users, count }) => (
+073:                         <div 
+074:                             key={emoji} 
+075:                             style={{...styles.reaction, backgroundColor: myReaction(emoji) ? '#5865f2' : '#40444b' }} 
+076:                             title={users.join(', ')}
+077:                             onClick={() => onToggleReaction(msg.id, emoji)}
+078:                         >
+079:                             {emoji} {count}
+080:                         </div>
+081:                     ))}
+082:                 </div>
+083:             )}
+084: 
+085:             {isHovered && (
+086:                 <div style={styles.messageActions}>
+087:                     {showReactionPicker && (
+088:                         <ReactionPicker 
+089:                             onEmojiSelect={(emoji) => onToggleReaction(msg.id, emoji)}
+090:                             onClose={() => setShowReactionPicker(false)}
+091:                         />
+092:                     )}
+093:                     <button onClick={() => setShowReactionPicker(true)} style={styles.actionButton}>🙂</button>
+094:                     <button onClick={() => onSetReply(msg)} style={styles.actionButton}>↩️</button>
+095:                     {isMyMessage && msg.content && <button onClick={() => onStartEdit(msg)} style={styles.actionButton}>✏️</button>}
+096:                     {isMyMessage && <button onClick={() => onDelete(msg.id)} style={styles.actionButton}>🗑️</button>}
+097:                 </div>
+098:             )}
+099:         </div>
+100:     );
+101: };
+102: 
+103: const styles = {
+104:     chatMessage: {
+105:         wordWrap: 'break-word',
+106:         backgroundColor: 'transparent',
+107:         flex: 1,
+108:         padding: '8px',
+109:         borderBottom: '1px dotted #444',
+110:         position: 'relative',
+111:         borderRadius: '5px',
+112:         paddingLeft: '15px'
+113:     },
+114:     messageHeader: { display: 'flex', alignItems: 'center', marginBottom: '3px' },
+115:     timestamp: { fontSize: '0.75em', color: '#888', marginLeft: '10px' },
+116:     editedText: { fontStyle: 'italic', color: '#a0a0a0', marginLeft: '5px' },
+117:     messageContent: { margin: '0 0 5px 0', color: '#dcddde', whiteSpace: 'pre-wrap' },
+118:     messageImage: { maxWidth: '100%', maxHeight: '300px', height: 'auto', borderRadius: '5px', marginTop: '5px', cursor: 'pointer' },
+119:     messageActions: {
+120:         position: 'absolute',
+121:         top: '-15px',
+122:         right: '10px',
+123:         backgroundColor: '#40444b',
+124:         borderRadius: '5px',
+125:         padding: '2px 5px',
+126:         display: 'flex',
+127:         gap: '5px',
+128:         boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+129:         zIndex: 50,
+130:     },
+131:     actionButton: { background: 'none', border: 'none', color: '#b9bbbe', cursor: 'pointer', fontSize: '1em' },
+132:     replyContainer: {
+133:         fontSize: '0.85em',
+134:         color: '#b9bbbe',
+135:         display: 'flex',
+136:         alignItems: 'center',
+137:         marginBottom: '4px',
+138:         marginLeft: '-5px',
+139:     },
+140:     replyLine: {
+141:         width: '20px',
+142:         height: '10px',
+143:         borderLeft: '2px solid #4f545c',
+144:         borderBottom: '2px solid #4f545c',
+145:         borderBottomLeftRadius: '5px',
+146:         marginRight: '8px',
+147:     },
+148:     replyUsername: { fontWeight: 'bold', marginRight: '5px' },
+149:     replyContent: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+150:     reactionsContainer: { display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' },
+151:     reaction: {
+152:         padding: '2px 8px',
+153:         borderRadius: '10px',
+154:         fontSize: '0.8em',
+155:         cursor: 'pointer',
+156:         color: 'white',
+157:         border: '1px solid transparent',
+158:     }
+159: };
+160: 
+161: export default Message;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\MESSAGE.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\MESSAGEEDITFORM.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/MessageEditForm.js
+002: 
+003: import React, { useState, useEffect, useRef } from 'react';
+004: 
+005: const MessageEditForm = ({ message, onSave, onCancel }) => {
+006:     const [content, setContent] = useState(message.content);
+007:     const inputRef = useRef(null);
+008: 
+009:     useEffect(() => {
+010:         if (inputRef.current) {
+011:             inputRef.current.focus();
+012:             inputRef.current.selectionStart = inputRef.current.value.length;
+013:         }
+014: 
+015:         const handleKeyDown = (e) => {
+016:             if (e.key === 'Escape') {
+017:                 onCancel();
+018:             }
+019:         };
+020: 
+021:         window.addEventListener('keydown', handleKeyDown);
+022:         return () => {
+023:             window.removeEventListener('keydown', handleKeyDown);
+024:         };
+025:     }, [onCancel]);
+026: 
+027:     const handleSave = (e) => {
+028:         e.preventDefault();
+029:         if (content.trim() && content.trim() !== message.content) {
+030:             onSave(message.id, content.trim());
+031:         } else {
+032:             onCancel();
+033:         }
+034:     };
+035: 
+036:     return (
+037:         <form onSubmit={handleSave} style={styles.form}>
+038:             <input
+039:                 ref={inputRef}
+040:                 type="text"
+041:                 value={content}
+042:                 onChange={(e) => setContent(e.target.value)}
+043:                 style={styles.input}
+044:             />
+045:             <div style={styles.footer}>
+046:                 çıkmak için <strong style={styles.key}>ESC</strong> • kaydetmek için <strong style={styles.key}>ENTER</strong>
+047:             </div>
+048:         </form>
+049:     );
+050: };
+051: 
+052: const styles = {
+053:     form: {
+054:         width: '100%',
+055:         padding: '8px'
+056:     },
+057:     input: {
+058:         width: '100%',
+059:         padding: '10px',
+060:         backgroundColor: '#484c52',
+061:         border: '1px solid #5865f2',
+062:         borderRadius: '4px',
+063:         color: 'white',
+064:         boxSizing: 'border-box',
+065:     },
+066:     footer: {
+067:         fontSize: '0.75em',
+068:         color: '#b9bbbe',
+069:         marginTop: '5px',
+070:     },
+071:     key: {
+072:         padding: '1px 4px',
+073:         backgroundColor: '#2f3136',
+074:         borderRadius: '3px',
+075:     }
+076: };
+077: 
+078: export default MessageEditForm;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\MESSAGEEDITFORM.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\REACTIONPICKER.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/ReactionPicker.js
+002: 
+003: import React, { useEffect, useRef } from 'react';
+004: 
+005: const REACTION_EMOJI_LIST = ['👍', '❤️', '😂', '😮', '😢', '🙏', '🔥', '🚀'];
+006: 
+007: const ReactionPicker = ({ onEmojiSelect, onClose }) => {
+008:     const pickerRef = useRef(null);
+009: 
+010:     useEffect(() => {
+011:         function handleClickOutside(event) {
+012:             if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+013:                 onClose();
+014:             }
+015:         }
+016:         document.addEventListener("mousedown", handleClickOutside);
+017:         return () => {
+018:             document.removeEventListener("mousedown", handleClickOutside);
+019:         };
+020:     }, [onClose]);
+021: 
+022:     const handleSelect = (emoji) => {
+023:         onEmojiSelect(emoji);
+024:         onClose();
+025:     };
+026: 
+027:     return (
+028:         <div ref={pickerRef} style={styles.pickerContainer}>
+029:             {REACTION_EMOJI_LIST.map(emoji => (
+030:                 <span 
+031:                     key={emoji} 
+032:                     style={styles.emojiItem}
+033:                     onClick={() => handleSelect(emoji)}
+034:                 >
+035:                     {emoji}
+036:                 </span>
+037:             ))}
+038:         </div>
+039:     );
+040: };
+041: 
+042: const styles = {
+043:     pickerContainer: {
+044:         position: 'absolute',
+045:         top: '-35px',
+046:         right: '0px',
+047:         backgroundColor: '#2f3136',
+048:         border: '1px solid #1e1f22',
+049:         borderRadius: '8px',
+050:         padding: '8px',
+051:         display: 'flex',
+052:         gap: '8px',
+053:         zIndex: 100,
+054:         boxShadow: '0 8px 16px rgba(0,0,0,0.24)',
+055:     },
+056:     emojiItem: {
+057:         cursor: 'pointer',
+058:         fontSize: '1.2em',
+059:         transition: 'transform 0.1s ease-out',
+060:     },
+061: };
+062: 
+063: export default ReactionPicker;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\REACTIONPICKER.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\REPLYPREVIEW.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/ReplyPreview.js
+002: 
+003: import React from 'react';
+004: 
+005: const ReplyPreview = ({ message, onCancel }) => {
+006:     if (!message) return null;
+007: 
+008:     return (
+009:         <div style={styles.container}>
+010:             <div style={styles.content}>
+011:                 <span style={styles.replyingTo}>Yanıtlanıyor: <strong>@{message.username}</strong></span>
+012:                 <p style={styles.messageText}>{message.content}</p>
+013:             </div>
+014:             <button onClick={onCancel} style={styles.cancelButton}>×</button>
+015:         </div>
+016:     );
+017: };
+018: 
+019: const styles = {
+020:     container: {
+021:         backgroundColor: '#2f3136',
+022:         padding: '8px 20px',
+023:         margin: '0 -20px 10px -20px',
+024:         display: 'flex',
+025:         justifyContent: 'space-between',
+026:         alignItems: 'center',
+027:         borderTop: '1px solid #444',
+028:     },
+029:     content: {
+030:         overflow: 'hidden',
+031:     },
+032:     replyingTo: {
+033:         fontSize: '0.8em',
+034:         color: '#b9bbbe',
+035:     },
+036:     messageText: {
+037:         margin: 0,
+038:         whiteSpace: 'nowrap',
+039:         overflow: 'hidden',
+040:         textOverflow: 'ellipsis',
+041:         color: '#dcddde',
+042:         fontSize: '0.9em',
+043:     },
+044:     cancelButton: {
+045:         background: 'none',
+046:         border: 'none',
+047:         color: '#b9bbbe',
+048:         fontSize: '1.5em',
+049:         cursor: 'pointer',
+050:         marginLeft: '10px',
+051:     },
+052: };
+053: 
+054: export default ReplyPreview;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\REPLYPREVIEW.JS] SON
+============================================================
+
+
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\USERPROFILEPANEL.JS] BAŞLANGIÇ
+============================================================
+001: // frontend/src/UserProfilePanel.js (TAM KOD)
+002: 
+003: import React, { useState, useRef } from 'react';
+004: 
+005: const UserProfilePanel = ({ 
+006:     user, onClose, onProfileUpdate, updateProfileUrl, getDeterministicAvatar 
+007: }) => {
+008:     const [statusMessage, setStatusMessage] = useState(user?.status_message || '');
+009:     const [selectedFile, setSelectedFile] = useState(null);
+010:     const [preview, setPreview] = useState(null);
+011:     const [isLoading, setIsLoading] = useState(false);
+012:     const fileInputRef = useRef(null);
+013: 
+014:     const handleFileChange = (e) => {
+015:         const file = e.target.files[0];
+016:         if (file && file.type.startsWith('image/')) {
+017:             setSelectedFile(file);
+018:             setPreview(URL.createObjectURL(file));
+019:         } else {
+020:             setSelectedFile(null);
+021:             setPreview(null);
+022:         }
+023:     };
+024: 
+025:     const handleSave = async () => {
+026:         if (!user) return;
+027:         setIsLoading(true);
+028: 
+029:         const formData = new FormData();
+030:         formData.append('username', user.username);
+031:         formData.append('status_message', statusMessage);
+032:         if (selectedFile) {
+033:             formData.append('avatar', selectedFile);
+034:         }
+035: 
+036:         try {
+037:             const response = await fetch(updateProfileUrl, {
+038:                 method: 'POST',
+039:                 body: formData,
+040:             });
+041:             const updatedData = await response.json();
+042:             if (response.ok) {
+043:                 onProfileUpdate(updatedData);
+044:                 onClose();
+045:             } else {
+046:                 alert(`Hata: ${updatedData.error || 'Profil güncellenemedi.'}`);
+047:             }
+048:         } catch (error) {
+049:             console.error("Profil güncelleme hatası:", error);
+050:             alert("Bir ağ hatası oluştu.");
+051:         } finally {
+052:             setIsLoading(false);
+053:         }
+054:     };
+055: 
+056:     const avatarUrl = preview || user?.avatar || getDeterministicAvatar(user?.username);
+057: 
+058:     return (
+059:         <div style={styles.overlay} onClick={onClose}>
+060:             <div style={styles.panel} onClick={e => e.stopPropagation()}>
+061:                 <button style={styles.closeButton} onClick={onClose}>×</button>
+062:                 <h2>Profili Düzenle</h2>
+063:                 
+064:                 <div style={styles.avatarSection}>
+065:                     <img src={avatarUrl} style={styles.avatar} alt="Avatar" />
+066:                     <button onClick={() => fileInputRef.current.click()} style={styles.changeAvatarButton}>
+067:                         Resmi Değiştir
+068:                     </button>
+069:                     <input 
+070:                         type="file" 
+071:                         ref={fileInputRef} 
+072:                         style={{ display: 'none' }} 
+073:                         accept="image/*" 
+074:                         onChange={handleFileChange}
+075:                     />
+076:                 </div>
+077: 
+078:                 <div style={styles.inputGroup}>
+079:                     <label htmlFor="status">Durum Mesajı</label>
+080:                     <input
+081:                         id="status"
+082:                         type="text"
+083:                         value={statusMessage}
+084:                         onChange={(e) => setStatusMessage(e.target.value)}
+085:                         placeholder="Ne düşünüyorsun?"
+086:                         maxLength="100"
+087:                         style={styles.input}
+088:                     />
+089:                 </div>
+090: 
+091:                 <button onClick={handleSave} disabled={isLoading} style={styles.saveButton}>
+092:                     {isLoading ? 'Kaydediliyor...' : 'Kaydet'}
+093:                 </button>
+094:             </div>
+095:         </div>
+096:     );
+097: };
+098: 
+099: const styles = {
+100:     overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+101:     panel: { backgroundColor: '#36393f', padding: '25px', borderRadius: '8px', color: 'white', width: '400px', position: 'relative', boxShadow: '0 5px 15px rgba(0,0,0,0.5)' },
+102:     closeButton: { position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#b9bbbe', fontSize: '1.5em', cursor: 'pointer' },
+103:     avatarSection: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' },
+104:     avatar: { width: '100px', height: '100px', borderRadius: '50%', marginBottom: '10px', objectFit: 'cover' },
+105:     changeAvatarButton: { padding: '8px 12px', backgroundColor: '#5865f2', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer' },
+106:     inputGroup: { marginBottom: '20px' },
+107:     input: { width: '100%', padding: '10px', backgroundColor: '#2f3136', border: '1px solid #202225', borderRadius: '4px', color: 'white', marginTop: '5px', boxSizing: 'border-box' },
+108:     saveButton: { width: '100%', padding: '12px', backgroundColor: '#43b581', border: 'none', borderRadius: '4px', color: 'white', fontSize: '1em', fontWeight: 'bold', cursor: 'pointer' },
+109: };
+110: 
+111: export default UserProfilePanel;
+============================================================
+DOSYA: [C:\USERS\EASTKHAN\SOFTWARE\JAVASCRIPT\PAWSCORD_CHAT\FRONTEND\SRC\USERPROFILEPANEL.JS] SON
+============================================================
+
