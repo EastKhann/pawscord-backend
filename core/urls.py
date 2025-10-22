@@ -1,8 +1,5 @@
-# core/urls.py (TÜM DOSYA YOLLARI İÇİN NİHAİ DÜZELTME)
-
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
@@ -25,6 +22,8 @@ if settings.DEBUG:
 
 # Statik dosyalar Whitenoise tarafından yönetilir, bu satır geliştirme sunucusu için kalabilir.
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Statik dosyalar Whitenoise tarafından yönetilir, bu satır geliştirme sunucusu için kalabilir.
 
 # KRİTİK: React uygulamasını ve public klasöründeki dosyaları sunma
 # Bu bloğun her zaman en sonda olduğundan emin ol!
